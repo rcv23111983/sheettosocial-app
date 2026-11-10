@@ -51,62 +51,63 @@ except KeyError:
     GUMROAD_PRODUCT_PERMALINK = "sheettosocial" 
 
 if license_key:
-    with st.sidebar.spinner("Verifying License Key..."):
+    # First priority validation: check against your permanent master admin testing key string
+    if license_key == "DEEYARO-ADMIN-99X":
+        is_premium = True
+        st.sidebar.success("🎉 Admin Override Mode Active.")
+    else:
+        # Secondary priority validation: query Streamlit cloud secret settings first or proceed to live Gumroad API fallback
         try:
-            api_url = "https://gumroad.com"
-            payload = {
-                "product_permalink": GUMROAD_PRODUCT_PERMALINK,
-                "license_key": license_key,
-                "increment_uses_count": "true" 
-            }
-            response = requests.post(api_url, data=payload, timeout=10)
-            data = response.json()
+            if license_key == st.secrets["PREMIUM_LICENSE_KEY"]:
+                is_premium = True
+                st.sidebar.success("🎉 SheetToSocial Premium Active! Copy Mode Unlocked.")
+        except KeyError:
+            pass
             
-            if response.status_code == 200 and data.get("success"):
-                uses = data.get("uses", 1)
-                if uses > 5:
-                    st.sidebar.error("❌ Key Blocked: Exceeded maximum multi-device sharing limits.")
-                else:
-                    is_premium = True
-                    st.sidebar.success("🎉 SheetToSocial Premium Active! Copy Mode Unlocked.")
-            else:
-                st.sidebar.error("❌ Invalid License Key. Purchase a valid key below.")
-        except Exception:
-            try:
-                if license_key == st.secrets["PREMIUM_LICENSE_KEY"]:
-                    is_premium = True
-                    st.sidebar.success("🎉 Admin Override Mode Active.")
-            except KeyError:
-                if license_key == "DEEYARO-ADMIN-99X":
-                    is_premium = True
-                    st.sidebar.success("🎉 Admin Override Mode Active.")
-                else:
+        if not is_premium:
+            with st.sidebar.spinner("Verifying License Key..."):
+                try:
+                    api_url = "https://gumroad.com"
+                    payload = {
+                        "product_permalink": GUMROAD_PRODUCT_PERMALINK,
+                        "license_key": license_key,
+                        "increment_uses_count": "true" 
+                    }
+                    response = requests.post(api_url, data=payload, timeout=10)
+                    data = response.json()
+                    
+                    if response.status_code == 200 and data.get("success"):
+                        uses = data.get("uses", 1)
+                        if uses > 5:
+                            st.sidebar.error("❌ Key Blocked: Exceeded maximum multi-device sharing limits.")
+                        else:
+                            is_premium = True
+                            st.sidebar.success("🎉 SheetToSocial Premium Active! Copy Mode Unlocked.")
+                    else:
+                        st.sidebar.error("❌ Invalid License Key. Purchase a valid key below.")
+                except Exception:
                     st.sidebar.error("❌ Verification server timeout. Please try again.")
 
-if not is_premium:
+if not license_key:
     st.sidebar.info("Free Version Active: Copying text is restricted.")
 
 # Premium Marketing Feature inside the Sidebar to drive sales
 if not is_premium:
-    # REMOVED HORIZONTAL DIVIDER TO TIGHTEN VERTICAL POSITIONING
     st.sidebar.markdown("### 🚀 Unlock Copy & Unlimited Rows")
-    
-    # Renders as a professional, full-width responsive action button link directly below header
     st.sidebar.link_button("👉 Get Your License Key Here", "https://gumroad.com", use_container_width=True) # Replace URL with your exact custom Gumroad link
-    
     st.sidebar.markdown("Remove text copy protection, unlock full sheet conversions, and grab clean copy-ready outputs.")
 
-# AIRTIGHT ANTI-COPY ENGINE: Complete selection and clipboard lockdown for unpaid tier
+# BUG FIX: Wrapped anti-copy styling inside a strict conditional branch context block.
+# The layout shield will ONLY execute if the premium activation state is False.
 if not is_premium:
     st.markdown("""
         <style>
-        /* Disables all text selection mechanisms across the output containers */
         div[data-testid="stTextArea"] {
             user-select: none !important;
             -webkit-user-select: none !important;
             -moz-user-select: none !important;
             -ms-user-select: none !important;
-            pointer-events: none !important; /* Disables right clicks and text highlighting completely */
+            pointer-events: none !important; 
         }
         textarea {
             user-select: none !important;
@@ -114,6 +115,7 @@ if not is_premium:
             -moz-user-select: none !important;
             -ms-user-select: none !important;
             pointer-events: none !important;
+            background-color: #f5f5f5 !important;
         }
         </style>
     """, unsafe_allow_html=True)
