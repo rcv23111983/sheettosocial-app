@@ -83,30 +83,30 @@ if license_key:
                 else:
                     st.sidebar.error("❌ Verification server timeout. Please try again.")
 
-if not license_key:
+if not is_premium:
     st.sidebar.info("Free Version Active: Copying text is restricted.")
 
 # Premium Marketing Feature inside the Sidebar to drive sales
 if not is_premium:
-    st.sidebar.markdown("---")
+    # REMOVED HORIZONTAL DIVIDER TO TIGHTEN VERTICAL POSITIONING
     st.sidebar.markdown("### 🚀 Unlock Copy & Unlimited Rows")
     
-    # POSITION SHIFT: Button is now placed directly below the header to guarantee instant visibility
+    # Renders as a professional, full-width responsive action button link directly below header
     st.sidebar.link_button("👉 Get Your License Key Here", "https://gumroad.com", use_container_width=True) # Replace URL with your exact custom Gumroad link
     
-    # Your original helpful context strings cleanly sit right underneath the button element
     st.sidebar.markdown("Remove text copy protection, unlock full sheet conversions, and grab clean copy-ready outputs.")
 
 # AIRTIGHT ANTI-COPY ENGINE: Complete selection and clipboard lockdown for unpaid tier
 if not is_premium:
     st.markdown("""
         <style>
+        /* Disables all text selection mechanisms across the output containers */
         div[data-testid="stTextArea"] {
             user-select: none !important;
             -webkit-user-select: none !important;
             -moz-user-select: none !important;
             -ms-user-select: none !important;
-            pointer-events: none !important; 
+            pointer-events: none !important; /* Disables right clicks and text highlighting completely */
         }
         textarea {
             user-select: none !important;
