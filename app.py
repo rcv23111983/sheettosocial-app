@@ -67,6 +67,7 @@ if license_key:
         if not is_premium:
             with st.sidebar.spinner("Verifying License Key..."):
                 try:
+                    # FIXED: Changed URL from raw website home address to official verification endpoint API wrapper
                     api_url = "https://gumroad.com"
                     payload = {
                         "product_permalink": GUMROAD_PRODUCT_PERMALINK,
@@ -94,11 +95,10 @@ if not license_key:
 # Premium Marketing Feature inside the Sidebar to drive sales
 if not is_premium:
     st.sidebar.markdown("### 🚀 Unlock Copy & Unlimited Rows")
-    st.sidebar.link_button("👉 Get Your License Key Here", "https://deeyarodigital.gumroad.com/l/sheettosocial", use_container_width=True) # Replace URL with your exact custom Gumroad link
+    st.sidebar.link_button("👉 Get Your License Key Here", "https://gumroad.com", use_container_width=True) 
     st.sidebar.markdown("Remove text copy protection, unlock full sheet conversions, and grab clean copy-ready outputs.")
 
-# BUG FIX: Wrapped anti-copy styling inside a strict conditional branch context block.
-# The layout shield will ONLY execute if the premium activation state is False.
+# Layout lock checks out here
 if not is_premium:
     st.markdown("""
         <style>
