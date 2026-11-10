@@ -22,9 +22,9 @@ with st.expander("📖 Need Help? Click here for the 3-Step Quick Start Guide", 
     st.markdown("""
     ### 👋 Welcome to SheetToSocial! Follow these simple steps:
     
-    1. **Prepare Your Spreadsheet:** Open Excel or Google Sheets and ensure your file has columns for your product details (e.g., *Product Name, Price, Description, Product Link*). Save it as a **.csv** or **.xlsx** file.
+    1. **Prepare Your Spreadsheet:** Open Excel or Google Sheets and ensure your file has columns for your product details (e.g., *Product Name, Price, Description, Product Link*). Save it as a **.csv** file.
     2. **Upload & Map:** Drag and drop your file into the uploader below. Use the dropdown menus to match your spreadsheet columns to our layout fields.
-    3. **Choose Your Style & Copy:** Select your target network (WhatsApp or Instagram) and your preferred writing tone. Click **Generate Social Posts**, then simply copy the text boxes directly onto your phone or computer clipboard!
+    3. **Choose Your Style & Copy:** Select your target network (WhatsApp or Instagram) and your preferred writing tone. Click **Generate Social Posts**, then simply copy the text boxes directly onto your social media platform.
     
     💡 *Tip: Your data is processed entirely inside your browser session. We do not store or save your files anywhere, keeping your customer data 100% private and secure.*
     """)
@@ -32,7 +32,7 @@ with st.expander("📖 Need Help? Click here for the 3-Step Quick Start Guide", 
 # 2. Premium / Sidebar Management
 
 # Agency logo renders first at the absolute top of the sidebar
-agency_logo = "logo.png"  
+agency_logo = "logo.png"
 if os.path.exists(agency_logo):
     st.sidebar.image(agency_logo, use_container_width=True)
 else:
@@ -40,54 +40,70 @@ else:
 
 st.sidebar.title("🔐 License Validation")
 
-license_key = st.sidebar.text_input("Enter Premium License Key", type="password", help="Enter the unique license key sent to your email by Gumroad.")
+# Initialize session state to prevent repeated Gumroad checks on every rerun
+if "license_verified" not in st.session_state:
+    st.session_state.license_verified = False
+
+if "current_license_key" not in st.session_state:
+    st.session_state.current_license_key = ""
+
+license_key = st.sidebar.text_input(
+    "Enter Premium License Key",
+    type="password",
+    help="Enter the unique license key sent to your email by Gumroad."
+)
 
 # LIVE GUMROAD VALIDATION ENGINE
 is_premium = False
 
-# FIXED: Fallback parameter defaults exactly to your official unique Gumroad Product ID
+# Fallback product ID
 try:
     GUMROAD_PRODUCT_ID = st.secrets["GUMROAD_PRODUCT_ID"]
 except KeyError:
-    GUMROAD_PRODUCT_ID = "YCWlhKUBLaOrVPoC3KK3LA==" 
+    GUMROAD_PRODUCT_ID = "YCWlhKUBLaOrVPoC3KK3LA=="
+
+# If a new key is entered, reset verification flag so it can be revalidated
+if license_key and st.session_state.current_license_key != license_key:
+    st.session_state.license_verified = False
+    st.session_state.current_license_key = license_key
 
 if license_key:
-    # First priority validation: check against your permanent master admin testing key string
+    # First priority validation: admin override
     if license_key == "DEEYARO-ADMIN-99X":
         is_premium = True
+        st.session_state.license_verified = True
         st.sidebar.success("🎉 Admin Override Mode Active.")
+
     else:
-        # Secondary priority validation: query Streamlit cloud secret settings first or proceed to live Gumroad API fallback
+        # Second priority validation: secret key check
         try:
             if license_key == st.secrets["PREMIUM_LICENSE_KEY"]:
                 is_premium = True
+                st.session_state.license_verified = True
                 st.sidebar.success("🎉 SheetToSocial Premium Active! Copy Mode Unlocked.")
         except KeyError:
             pass
-            
-        if not is_premium:
+
+        # Third priority validation: Gumroad API
+        if not is_premium and not st.session_state.license_verified:
             with st.sidebar.spinner("Verifying License Key..."):
                 try:
                     api_url = "https://api.gumroad.com/v2/licenses/verify"
-                    
-                    # FIXED: Swapped out 'product_permalink' parameter key for the updated, mandatory 'product_id' parameter
+
+                    # IMPORTANT: do not increment use count on each Streamlit rerun
                     payload = {
                         "product_id": str(GUMROAD_PRODUCT_ID).strip(),
                         "license_key": str(license_key).strip(),
-                        "increment_uses_count": "true" 
+                        "increment_uses_count": "false"
                     }
-                    
-                    # Gumroad expects form parameters natively for the verify endpoint
+
                     response = requests.post(api_url, data=payload, timeout=12)
                     data = response.json()
-                    
+
                     if response.status_code == 200 and data.get("success"):
-                        uses = data.get("uses", 1)
-                        if uses > 5:
-                            st.sidebar.error("❌ Key Blocked: Exceeded maximum multi-device sharing limits.")
-                        else:
-                            is_premium = True
-                            st.sidebar.success("🎉 SheetToSocial Premium Active! Copy Mode Unlocked.")
+                        is_premium = True
+                        st.session_state.license_verified = True
+                        st.sidebar.success("🎉 SheetToSocial Premium Active! Copy Mode Unlocked.")
                     else:
                         st.sidebar.error("❌ Invalid License Key. Purchase a valid key below.")
                 except Exception:
@@ -99,7 +115,7 @@ if not license_key:
 # Premium Marketing Feature inside the Sidebar to drive sales
 if not is_premium:
     st.sidebar.markdown("### 🚀 Unlock Copy & Unlimited Rows")
-    st.sidebar.link_button("👉 Get Your License Key Here", "https://deeyarodigital.gumroad.com/l/sheettosocial", use_container_width=True) 
+    st.sidebar.link_button("👉 Get Your License Key Here", "https://deeyarodigital.gumroad.com/l/sheettosocial", use_container_width=True)
     st.sidebar.markdown("Remove text copy protection, unlock full sheet conversions, and grab clean copy-ready outputs.")
 
 # Layout lock checks out here
@@ -133,17 +149,17 @@ if uploaded_file is not None:
             df = pd.read_csv(uploaded_file)
         else:
             df = pd.read_excel(uploaded_file)
-        
+
         st.success("File uploaded successfully to SheetToSocial!")
-        
+
         # Apply row restrictions if not premium
         if not is_premium:
             df = df.head(2)
             st.warning("🔒 Free Preview Mode: Showing 2 rows. Copying text is disabled until Premium is active.")
-        
+
         # Dynamic Column Mapping
         columns = df.columns.tolist()
-        
+
         col1, col2 = st.columns(2)
         with col1:
             st.write("### 🧭 Map Your Columns")
@@ -151,33 +167,33 @@ if uploaded_file is not None:
             price_col = st.selectbox("Select Price column", columns)
             desc_col = st.selectbox("Select Description/Features column", columns)
             link_col = st.selectbox("Select Product Link column (Optional)", ["None"] + columns)
-            
+
         with col2:
             st.write("### 🎨 Content Style Settings")
             target_platform = st.selectbox("Select Target Network", ["WhatsApp (Uses Bold * Formatting)", "Instagram / Facebook (Clean Formatting)"])
             writing_tone = st.selectbox("Select Copywriting Tone", ["Urgent / Sales Focus (FOMO 🔥)", "Professional & Elegant (Clean 💎)", "Casual & Friendly (Fun ✨)"])
-        
+
         st.write("---")
-        
+
         if st.button("✨ Generate Social Posts", use_container_width=True):
             st.write("### 📝 Your Ready-to-Post Copy")
-            
+
             for index, row in df.iterrows():
                 p_name = row[title_col]
                 p_price = row[price_col]
                 p_desc = row[desc_col]
-                
+
                 # Format links safely
                 if link_col == "None" or pd.isna(row[link_col]):
                     p_link = ""
                 else:
                     p_link = f"🔗 Shop Here: {row[link_col]}\n"
-                
+
                 # Formatting tweaks based on Platform choice
                 bold_start = "*" if "WhatsApp" in target_platform else ""
                 bold_end = "*" if "WhatsApp" in target_platform else ""
-                
-                # Copywriting updates based on Chosen Tone
+
+                # Copywriting updates based on chosen tone
                 if "Urgent" in writing_tone:
                     header = f"🚨 {bold_start}LIMITED STOCK | NEW ARRIVAL{bold_end} 🚨\n🔥 {bold_start}{p_name}{bold_end} 🔥"
                     footer = "⚡ Order Now Before It Sells Out! | DM to Secure Yours! 📦"
@@ -190,7 +206,7 @@ if uploaded_file is not None:
                     header = f"✨ Hey friends! Look at this: {bold_start}{bold_end} {p_name}{bold_end} ✨"
                     footer = "👋 Drop us a DM to order yours today! Free shipping included 🎉"
                     price_line = f"💸 {bold_start}Price:{bold_end} {p_price}"
-                
+
                 # Recompiling into the final Omnichannel Structural Template
                 post_template = f"""{header}
 
@@ -198,10 +214,10 @@ if uploaded_file is not None:
 📝 {bold_start}Details:{bold_end} {p_desc}
 {p_link}
 {footer}"""
-                
+
                 # Rendering copyable text areas
                 st.text_area(f"📦 Product Box {index + 1} ({p_name})", value=post_template, height=220)
                 st.divider()
-                
+
     except Exception as e:
         st.error(f"Error reading file: {e}")
