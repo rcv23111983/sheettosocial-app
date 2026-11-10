@@ -84,12 +84,18 @@ css_style = """
         padding-bottom: 1rem !important;
     }
     
-    /* LOGO CENTERING ALIGNMENT: Forces image blocks inside the sidebar to remain centered */
-    [data-testid="stSidebar"] [data-testid="stImage"] {
+    /* DUAL-LAYER LOGO CENTERING: Overrides left layout alignment to position your logo perfectly in the center */
+    [data-testid="stSidebar"] [data-testid="stImage"],
+    [data-testid="stSidebar"] .stImage {
         display: flex !important;
         justify-content: center !important;
-        margin-left: auto !important;
-        margin-right: auto !important;
+        align-items: center !important;
+        text-align: center !important;
+        margin: 0 auto !important;
+    }
+    [data-testid="stSidebar"] [data-testid="stImage"] img,
+    [data-testid="stSidebar"] .stImage img {
+        margin: 0 auto !important;
     }
 """
 
@@ -112,7 +118,6 @@ if not is_premium:
     """
 
 css_style += "</style>"
-# FIXED: Changed from unsafe_allowed_html=True to unsafe_allow_html=True
 st.markdown(css_style, unsafe_allow_html=True)
 
 # PRODUCT BRANDING: Displays the SheetToSocial logo at the top center
