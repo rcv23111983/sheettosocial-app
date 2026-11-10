@@ -45,10 +45,11 @@ license_key = st.sidebar.text_input("Enter Premium License Key", type="password"
 # LIVE GUMROAD VALIDATION ENGINE
 is_premium = False
 
+# FIXED: Fallback parameter defaults exactly to your official unique Gumroad Product ID
 try:
-    GUMROAD_PRODUCT_PERMALINK = st.secrets["GUMROAD_PRODUCT_PERMALINK"]
+    GUMROAD_PRODUCT_ID = st.secrets["GUMROAD_PRODUCT_ID"]
 except KeyError:
-    GUMROAD_PRODUCT_PERMALINK = "sheettosocial" 
+    GUMROAD_PRODUCT_ID = "YCWlhKUBLaOrVPoC3KK3LA==" 
 
 if license_key:
     # First priority validation: check against your permanent master admin testing key string
@@ -67,14 +68,17 @@ if license_key:
         if not is_premium:
             with st.sidebar.spinner("Verifying License Key..."):
                 try:
-                    # FIXED: Changed URL from raw website home address to official verification endpoint API wrapper
-                    api_url = "https://gumroad.com"
+                    api_url = "https://api.gumroad.com/v2/licenses/verify"
+                    
+                    # FIXED: Swapped out 'product_permalink' parameter key for the updated, mandatory 'product_id' parameter
                     payload = {
-                        "product_permalink": GUMROAD_PRODUCT_PERMALINK,
-                        "license_key": license_key,
+                        "product_id": str(GUMROAD_PRODUCT_ID).strip(),
+                        "license_key": str(license_key).strip(),
                         "increment_uses_count": "true" 
                     }
-                    response = requests.post(api_url, data=payload, timeout=10)
+                    
+                    # Gumroad expects form parameters natively for the verify endpoint
+                    response = requests.post(api_url, data=payload, timeout=12)
                     data = response.json()
                     
                     if response.status_code == 200 and data.get("success"):
@@ -95,7 +99,7 @@ if not license_key:
 # Premium Marketing Feature inside the Sidebar to drive sales
 if not is_premium:
     st.sidebar.markdown("### 🚀 Unlock Copy & Unlimited Rows")
-    st.sidebar.link_button("👉 Get Your License Key Here", "https://deeyarodigital.gumroad.com/l/sheettosocial", use_container_width=True) 
+    st.sidebar.link_button("👉 Get Your License Key Here", "https://gumroad.com", use_container_width=True) 
     st.sidebar.markdown("Remove text copy protection, unlock full sheet conversions, and grab clean copy-ready outputs.")
 
 # Layout lock checks out here
@@ -183,7 +187,7 @@ if uploaded_file is not None:
                     footer = "✨ Premium Quality Guaranteed. Direct Message for inquiries or corporate orders."
                     price_line = f"▫️ {bold_start}Investment:{bold_end} {p_price}"
                 else:
-                    header = f"✨ Hey friends! Look at this: {bold_start}{p_name}{bold_end} ✨"
+                    header = f"✨ Hey friends! Look at this: {bold_start}{bold_end} {p_name}{bold_end} ✨"
                     footer = "👋 Drop us a DM to order yours today! Free shipping included 🎉"
                     price_line = f"💸 {bold_start}Price:{bold_end} {p_price}"
                 
