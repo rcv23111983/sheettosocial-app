@@ -40,63 +40,61 @@ else:
 
 st.sidebar.title("🔐 License Validation")
 
+# INITIALIZE SESSIONS: Standard runtime memory configurations
+if "premium_unlocked" not in st.session_state:
+    st.session_state["premium_unlocked"] = False
+
 license_key = st.sidebar.text_input("Enter Premium License Key", type="password", help="Enter the unique license key sent to your email by Gumroad.")
 
-# CACHED VERIFICATION ENGINE: Completely limits network pings to exactly 1 look-up per key
-@st.cache_data(show_spinner=False)
-def check_gumroad_license(key, product_id):
-    try:
-        api_url = "https://gumroad.com"
-        payload = {
-            "product_id": str(product_id).strip(),
-            "license_key": str(key).strip(),
-            "increment_uses_count": "true" 
-        }
-        response = requests.post(api_url, data=payload, timeout=12)
-        data = response.json()
-        
-        if response.status_code == 200 and data.get("success"):
-            return True, data.get("uses", 1)
-        return False, 0
-    except Exception:
-        return False, -1
-
-# LIVE VALIDATION ENGINE EXECUTION
-is_premium = False
+# ACTION TRIGGER: Verification execution control layout
+verify_clicked = st.sidebar.button("🔐 Verify Key", use_container_width=True)
 
 try:
     GUMROAD_PRODUCT_ID = st.secrets["GUMROAD_PRODUCT_ID"]
 except KeyError:
     GUMROAD_PRODUCT_ID = "YCWlhKUBLaOrVPoC3KK3LA==" 
 
-if license_key:
-    # First priority validation: Admin master bypass key string
+# Verification processing loops
+if verify_clicked and license_key:
+    # 1. First priority validation: Admin master bypass key string
     if license_key == "DEEYARO-ADMIN-99X":
-        is_premium = True
+        st.session_state["premium_unlocked"] = True
         st.sidebar.success("🎉 Admin Override Mode Active.")
     else:
-        # Secondary priority validation: local secret variable string matching
+        # 2. Secondary priority validation: local secret variable matching
+        is_secret_match = False
         try:
             if license_key == st.secrets["PREMIUM_LICENSE_KEY"]:
-                is_premium = True
+                st.session_state["premium_unlocked"] = True
+                is_secret_match = True
                 st.sidebar.success("🎉 SheetToSocial Premium Active! Copy Mode Unlocked.")
         except KeyError:
             pass
             
-        # Third priority: Request cached server validation
-        if not is_premium:
+        # 3. Third priority: Live Gumroad API validation query
+        if not is_secret_match:
             with st.sidebar.spinner("Verifying License Key..."):
-                success, uses = check_gumroad_license(license_key, GUMROAD_PRODUCT_ID)
-                if success:
-                    # Ignore arbitrary usage spikes on testing logs to maintain absolute stability
-                    is_premium = True
-                    st.sidebar.success("🎉 SheetToSocial Premium Active! Copy Mode Unlocked.")
-                elif uses == -1:
+                try:
+                    api_url = "https://gumroad.com"
+                    payload = {
+                        "product_id": str(GUMROAD_PRODUCT_ID).strip(),
+                        "license_key": str(license_key).strip(),
+                        "increment_uses_count": "true"
+                    }
+                    response = requests.post(api_url, data=payload, timeout=12)
+                    data = response.json()
+                    
+                    if response.status_code == 200 and data.get("success"):
+                        st.session_state["premium_unlocked"] = True
+                        st.sidebar.success("🎉 SheetToSocial Premium Active! Copy Mode Unlocked.")
+                    else:
+                        st.session_state["premium_unlocked"] = False
+                        st.sidebar.error("❌ Invalid License Key. Purchase a valid key below.")
+                except Exception:
                     st.sidebar.error("❌ Verification server timeout. Please try again.")
-                else:
-                    st.sidebar.error("❌ Invalid License Key. Purchase a valid key below.")
-else:
-    is_premium = False
+
+# Check the global validation profile state flag
+is_premium = st.session_state["premium_unlocked"]
 
 if not is_premium:
     st.sidebar.info("Free Version Active: Copying text is restricted.")
@@ -104,10 +102,11 @@ if not is_premium:
 # Premium Marketing Feature inside the Sidebar to drive sales
 if not is_premium:
     st.sidebar.markdown("### 🚀 Unlock Copy & Unlimited Rows")
-    st.sidebar.link_button("👉 Get Your License Key Here", "https://deeyarodigital.gumroad.com/l/sheettosocial", use_container_width=True) 
+    # INTEGRATED REQUEST: Your exact custom storefront link button component
+    st.sidebar.link_button("👉 Get Your License Key Here", "https://deeyarodigital.gumroad.com/l/sheettosocial", use_container_width=True)
     st.sidebar.markdown("Remove text copy protection, unlock full sheet conversions, and grab clean copy-ready outputs.")
 
-# Layout lock checks out here
+# Layout lock shield execution blocks
 if not is_premium:
     st.markdown("""
         <style>
