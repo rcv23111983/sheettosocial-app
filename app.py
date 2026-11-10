@@ -40,7 +40,7 @@ else:
 
 st.sidebar.title("🔐 License Validation")
 
-# Initialize session state to prevent repeated Gumroad checks on every rerun
+# Session state to keep premium status during reruns
 if "license_verified" not in st.session_state:
     st.session_state.license_verified = False
 
@@ -62,20 +62,24 @@ try:
 except KeyError:
     GUMROAD_PRODUCT_ID = "YCWlhKUBLaOrVPoC3KK3LA=="
 
-# If a new key is entered, reset verification flag so it can be revalidated
+# If the key changes, reset validation status
 if license_key and st.session_state.current_license_key != license_key:
-    st.session_state.license_verified = False
     st.session_state.current_license_key = license_key
+    st.session_state.license_verified = False
 
 if license_key:
-    # First priority validation: admin override
-    if license_key == "DEEYARO-ADMIN-99X":
+    # If already validated during this browser session, keep premium access
+    if st.session_state.license_verified:
+        is_premium = True
+        st.sidebar.success("🎉 SheetToSocial Premium Active! Copy Mode Unlocked.")
+
+    elif license_key == "DEEYARO-ADMIN-99X":
         is_premium = True
         st.session_state.license_verified = True
         st.sidebar.success("🎉 Admin Override Mode Active.")
 
     else:
-        # Second priority validation: secret key check
+        # Secret key override
         try:
             if license_key == st.secrets["PREMIUM_LICENSE_KEY"]:
                 is_premium = True
@@ -84,13 +88,12 @@ if license_key:
         except KeyError:
             pass
 
-        # Third priority validation: Gumroad API
-        if not is_premium and not st.session_state.license_verified:
+        # Gumroad verification
+        if not is_premium:
             with st.sidebar.spinner("Verifying License Key..."):
                 try:
                     api_url = "https://api.gumroad.com/v2/licenses/verify"
 
-                    # IMPORTANT: do not increment use count on each Streamlit rerun
                     payload = {
                         "product_id": str(GUMROAD_PRODUCT_ID).strip(),
                         "license_key": str(license_key).strip(),
@@ -108,8 +111,7 @@ if license_key:
                         st.sidebar.error("❌ Invalid License Key. Purchase a valid key below.")
                 except Exception:
                     st.sidebar.error("❌ Verification server timeout. Please try again.")
-
-if not license_key:
+else:
     st.sidebar.info("Free Version Active: Copying text is restricted.")
 
 # Premium Marketing Feature inside the Sidebar to drive sales
@@ -149,17 +151,17 @@ if uploaded_file is not None:
             df = pd.read_csv(uploaded_file)
         else:
             df = pd.read_excel(uploaded_file)
-
+        
         st.success("File uploaded successfully to SheetToSocial!")
-
+        
         # Apply row restrictions if not premium
         if not is_premium:
             df = df.head(2)
             st.warning("🔒 Free Preview Mode: Showing 2 rows. Copying text is disabled until Premium is active.")
-
+        
         # Dynamic Column Mapping
         columns = df.columns.tolist()
-
+        
         col1, col2 = st.columns(2)
         with col1:
             st.write("### 🧭 Map Your Columns")
@@ -167,32 +169,32 @@ if uploaded_file is not None:
             price_col = st.selectbox("Select Price column", columns)
             desc_col = st.selectbox("Select Description/Features column", columns)
             link_col = st.selectbox("Select Product Link column (Optional)", ["None"] + columns)
-
+            
         with col2:
             st.write("### 🎨 Content Style Settings")
             target_platform = st.selectbox("Select Target Network", ["WhatsApp (Uses Bold * Formatting)", "Instagram / Facebook (Clean Formatting)"])
             writing_tone = st.selectbox("Select Copywriting Tone", ["Urgent / Sales Focus (FOMO 🔥)", "Professional & Elegant (Clean 💎)", "Casual & Friendly (Fun ✨)"])
-
+        
         st.write("---")
-
+        
         if st.button("✨ Generate Social Posts", use_container_width=True):
             st.write("### 📝 Your Ready-to-Post Copy")
-
+            
             for index, row in df.iterrows():
                 p_name = row[title_col]
                 p_price = row[price_col]
                 p_desc = row[desc_col]
-
+                
                 # Format links safely
                 if link_col == "None" or pd.isna(row[link_col]):
                     p_link = ""
                 else:
                     p_link = f"🔗 Shop Here: {row[link_col]}\n"
-
+                
                 # Formatting tweaks based on Platform choice
                 bold_start = "*" if "WhatsApp" in target_platform else ""
                 bold_end = "*" if "WhatsApp" in target_platform else ""
-
+                
                 # Copywriting updates based on chosen tone
                 if "Urgent" in writing_tone:
                     header = f"🚨 {bold_start}LIMITED STOCK | NEW ARRIVAL{bold_end} 🚨\n🔥 {bold_start}{p_name}{bold_end} 🔥"
@@ -206,7 +208,7 @@ if uploaded_file is not None:
                     header = f"✨ Hey friends! Look at this: {bold_start}{bold_end} {p_name}{bold_end} ✨"
                     footer = "👋 Drop us a DM to order yours today! Free shipping included 🎉"
                     price_line = f"💸 {bold_start}Price:{bold_end} {p_price}"
-
+                
                 # Recompiling into the final Omnichannel Structural Template
                 post_template = f"""{header}
 
@@ -218,6 +220,6 @@ if uploaded_file is not None:
                 # Rendering copyable text areas
                 st.text_area(f"📦 Product Box {index + 1} ({p_name})", value=post_template, height=220)
                 st.divider()
-
+                
     except Exception as e:
         st.error(f"Error reading file: {e}")
