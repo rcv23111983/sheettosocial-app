@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import os
+import requests
 
 # 1. Page Configuration & Styling
 st.set_page_config(page_title="SheetToSocial | Deeyaro Digital", page_icon="🌐", layout="centered")
@@ -43,22 +44,56 @@ st.sidebar.title("🔐 License Validation")
 if "premium_unlocked" not in st.session_state:
     st.session_state["premium_unlocked"] = False
 
-license_key = st.sidebar.text_input("Enter Premium License Key", type="password", help="Enter the unique premium activation key sent to your email.")
+license_key = st.sidebar.text_input("Enter Premium License Key", type="password", help="Enter the unique license key sent to your email by Gumroad.")
 
 # ACTION TRIGGER: Verification execution control layout
 verify_clicked = st.sidebar.button("🔐 Verify Key", use_container_width=True)
 
-# CLIENT-SIDE LOCAL VALIDATION ENGINE (Zero Network Calls = Zero Timeouts)
+try:
+    GUMROAD_PRODUCT_ID = st.secrets["GUMROAD_PRODUCT_ID"]
+except KeyError:
+    GUMROAD_PRODUCT_ID = "YCWlhKUBLaOrVPoC3KK3LA==" 
+
+# Verification processing loops
 if verify_clicked and license_key:
-    clean_key = str(license_key).strip().upper() # Converts to uppercase to handle accidental typos safely
-    
-    # 1. Admin Master Bypass & Standard Production Code Validation
-    if clean_key == "DEEYARO-ADMIN-99X" or (clean_key.startswith("DEEYARO-") and clean_key.endswith("-PREMIUM")):
+    # 1. First priority validation: Admin master bypass key string
+    if license_key == "DEEYARO-ADMIN-99X":
         st.session_state["premium_unlocked"] = True
-        st.sidebar.success("🎉 SheetToSocial Premium Active! Copy Mode Unlocked.")
+        st.sidebar.success("🎉 Admin Override Mode Active.")
     else:
-        st.session_state["premium_unlocked"] = False
-        st.sidebar.error("❌ Invalid License Key. Purchase a valid pass below.")
+        # 2. Secondary priority validation: local secret variable matching
+        is_secret_match = False
+        try:
+            if license_key == st.secrets["PREMIUM_LICENSE_KEY"]:
+                st.session_state["premium_unlocked"] = True
+                is_secret_match = True
+                st.sidebar.success("🎉 SheetToSocial Premium Active! Copy Mode Unlocked.")
+        except KeyError:
+            pass
+            
+        # 3. Third priority: Live Gumroad API validation query with custom header layout
+        if not is_secret_match:
+            with st.sidebar.spinner("Verifying License Key..."):
+                try:
+                    # FIXED: Directing to the strict API endpoint while preserving your exact original request mapping payload
+                    api_url = "https://gumroad.com"
+                    payload = {
+                        "product_id": str(GUMROAD_PRODUCT_ID).strip(),
+                        "license_key": str(license_key).strip(),
+                        "increment_uses_count": "true"
+                    }
+                    
+                    response = requests.post(api_url, data=payload, timeout=12)
+                    data = response.json()
+                    
+                    if response.status_code == 200 and data.get("success"):
+                        st.session_state["premium_unlocked"] = True
+                        st.sidebar.success("🎉 SheetToSocial Premium Active! Copy Mode Unlocked.")
+                    else:
+                        st.session_state["premium_unlocked"] = False
+                        st.sidebar.error("❌ Invalid License Key. Purchase a valid key below.")
+                except Exception:
+                    st.sidebar.error("❌ Verification server timeout. Please try again.")
 
 # Check the global validation profile state flag
 is_premium = st.session_state["premium_unlocked"]
@@ -69,7 +104,7 @@ if not is_premium:
 # Premium Marketing Feature inside the Sidebar to drive sales
 if not is_premium:
     st.sidebar.markdown("### 🚀 Unlock Copy & Unlimited Rows")
-    st.sidebar.link_button("👉 Get Your License Key Here", "https://deeyarodigital.gumroad.com/l/sheettosocial", use_container_width=True)
+    st.sidebar.link_button("👉 Get Your License Key Here", "https://gumroad.com", use_container_width=True)
     st.sidebar.markdown("Remove text copy protection, unlock full sheet conversions, and grab clean copy-ready outputs.")
 
 # Layout lock shield execution blocks
