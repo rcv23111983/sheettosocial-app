@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import os
 
-# 1. Page Configuration & Styling (Changed icon from 📈 to 🌐)
+# 1. Page Configuration & Styling 
 st.set_page_config(page_title="SheetToSocial | Deeyaro Digital", page_icon="🌐", layout="centered")
 
 # PRODUCT BRANDING: Displays the SheetToSocial logo at the top center
@@ -12,10 +12,21 @@ if os.path.exists(product_logo):
 else:
     st.markdown("### 🌐 **SheetToSocial**")
 
-# REMOVED STOCK CHART EMOJI: Changed title emoji to a clean digital world icon
 st.title("🌐 SheetToSocial")
 st.caption("An exclusive high-leverage utility developed by DEEYARO DIGITAL")
 st.subheader("Transform messy spreadsheets into gorgeous, ready-to-post social media text instantly.")
+
+# NEW FEATURE: Interactive "How to Use" Guide for Users
+with st.expander("📖 Need Help? Click here for the 3-Step Quick Start Guide", expanded=False):
+    st.markdown("""
+    ### 👋 Welcome to SheetToSocial! Follow these simple steps:
+    
+    1. **Prepare Your Spreadsheet:** Open Excel or Google Sheets and ensure your file has columns for your product details (e.g., *Product Name, Price, Description, Product Link*). Save it as a **.csv** or **.xlsx** file.
+    2. **Upload & Map:** Drag and drop your file into the uploader below. Use the dropdown menus to match your spreadsheet columns to our layout fields.
+    3. **Choose Your Style & Copy:** Select your target network (WhatsApp or Instagram) and your preferred writing tone. Click **Generate Social Posts**, then simply copy the text boxes directly onto your phone or computer clipboard!
+    
+    💡 *Tip: Your data is processed entirely inside your browser session. We do not store or save your files anywhere, keeping your customer data 100% private and secure.*
+    """)
 
 # 2. Premium / Sidebar Management
 st.sidebar.title("🔐 License Validation")
