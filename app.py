@@ -68,7 +68,7 @@ if is_premium:
 else:
     st.sidebar.info("Free Mode Active.")
 
-# DYNAMIC INJECTION ENGINE: Removes scrollbars and locks clipboard selections natively
+# DYNAMIC INJECTION ENGINE: Removes scrollbars, centers image layout, and locks clipboard selections natively
 css_style = """
     <style>
     /* 1. Global Sidebar Layout Optimization to remove scrollbars */
@@ -82,6 +82,14 @@ css_style = """
     div[data-testid="stSidebarUserContent"] {
         padding-top: 1rem !important;
         padding-bottom: 1rem !important;
+    }
+    
+    /* NEW LOGO CENTERING ALIGNMENT: Forces image blocks inside the sidebar to remain centered */
+    [data-testid="stSidebar"] [data-testid="stImage"] {
+        display: flex !important;
+        justify-content: center !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
     }
 """
 
@@ -104,7 +112,7 @@ if not is_premium:
     """
 
 css_style += "</style>"
-st.markdown(css_style, unsafe_allow_html=True)
+st.markdown(css_style, unsafe_allowed_html=True)
 
 # PRODUCT BRANDING: Displays the SheetToSocial logo at the top center
 product_logo = "sheet_logo.png"
