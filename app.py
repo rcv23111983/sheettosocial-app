@@ -6,6 +6,106 @@ import requests
 # 1. Page Configuration & Styling
 st.set_page_config(page_title="SheetToSocial | Deeyaro Digital", page_icon="🌐", layout="centered")
 
+# LIVE GUMROAD VALIDATION INITIALIZATION
+is_premium = False
+
+# 2. Premium / Sidebar Management
+st.sidebar.title("🔐 License Validation")
+
+# AGENCY BRANDING: Displays your official DEEYARO DIGITAL logo inside the sidebar
+agency_logo = "logo.png"  
+if os.path.exists(agency_logo):
+    st.sidebar.image(agency_logo, width=160)
+else:
+    st.sidebar.markdown("### 🏢 **DEEYARO DIGITAL**")
+
+license_key = st.sidebar.text_input("Enter Premium Key", type="password", help="Enter the unique license key sent by Gumroad.")
+
+# Dynamic pull for the Gumroad Product Permalink
+try:
+    GUMROAD_PRODUCT_PERMALINK = st.secrets["GUMROAD_PRODUCT_PERMALINK"]
+except KeyError:
+    GUMROAD_PRODUCT_PERMALINK = "sheettosocial" # Replace this string with your exact Gumroad product URL handle
+
+if license_key:
+    with st.sidebar.spinner("Checking..."):
+        try:
+            api_url = "https://gumroad.com"
+            payload = {
+                "product_permalink": GUMROAD_PRODUCT_PERMALINK,
+                "license_key": license_key,
+                "increment_uses_count": "true" 
+            }
+            response = requests.post(api_url, data=payload, timeout=10)
+            data = response.json()
+            
+            if response.status_code == 200 and data.get("success"):
+                uses = data.get("uses", 1)
+                if uses > 5:
+                    st.sidebar.error("❌ Key Blocked: Sharing Limit Exceeded.")
+                else:
+                    is_premium = True
+            else:
+                st.sidebar.error("❌ Invalid Key. Try again.")
+        except Exception:
+            try:
+                if license_key == st.secrets["PREMIUM_LICENSE_KEY"]:
+                    is_premium = True
+            except KeyError:
+                if license_key == "DEEYARO-ADMIN-99X":
+                    is_premium = True
+                else:
+                    st.sidebar.error("❌ Verification server timeout.")
+
+# COMPACT SIDEBAR CTA POSITIONING: Sits cleanly at eye level
+if not is_premium:
+    st.sidebar.markdown("### 🚀 Unlock Copy")
+    st.sidebar.link_button("👉 Get License Key Here", "https://gumroad.com", use_container_width=True) # Replace URL with your exact custom Gumroad link
+
+# Render validation status indicators
+if is_premium:
+    st.sidebar.success("🎉 Premium Mode Active!")
+else:
+    st.sidebar.info("Free Mode Active.")
+
+# DYNAMIC INJECTION ENGINE: Removes scrollbars and locks clipboard selections natively
+css_style = """
+    <style>
+    /* 1. Global Sidebar Layout Optimization to remove scrollbars */
+    section[data-testid="stSidebar"] div.stMainBlockContainer {
+        padding-top: 1.5rem !important;
+        padding-bottom: 1rem !important;
+    }
+    section[data-testid="stSidebar"] {
+        overflow: hidden !important; 
+    }
+    div[data-testid="stSidebarUserContent"] {
+        padding-top: 1rem !important;
+        padding-bottom: 1rem !important;
+    }
+"""
+
+# Appends clipboard-blocking layers if user hasn't successfully input their key
+if not is_premium:
+    css_style += """
+    /* 2. Anti-Copy selection and clipboard lockdown for unpaid tier */
+    div[data-testid="stTextArea"] {
+        user-select: none !important;
+        -webkit-user-select: none !important;
+        -moz-user-select: none !important;
+        -ms-user-select: none !important;
+        pointer-events: none !important; 
+    }
+    textarea {
+        user-select: none !important;
+        -webkit-user-select: none !important;
+        pointer-events: none !important;
+    }
+    """
+
+css_style += "</style>"
+st.markdown(css_style, unsafe_allow_html=True)
+
 # PRODUCT BRANDING: Displays the SheetToSocial logo at the top center
 product_logo = "sheet_logo.png"
 if os.path.exists(product_logo):
@@ -28,92 +128,6 @@ with st.expander("📖 Need Help? Click here for the 3-Step Quick Start Guide", 
     
     💡 *Tip: Your data is processed entirely inside your browser session. We do not store or save your files anywhere, keeping your customer data 100% private and secure.*
     """)
-
-# 2. Premium / Sidebar Management
-st.sidebar.title("🔐 License Validation")
-
-# AGENCY BRANDING: Displays your official DEEYARO DIGITAL logo inside the sidebar
-agency_logo = "logo.png"  
-if os.path.exists(agency_logo):
-    st.sidebar.image(agency_logo, use_container_width=True)
-else:
-    st.sidebar.markdown("### 🏢 **DEEYARO DIGITAL**")
-
-# PRE-VALIDATION CHECK TO DETERMINE SIDEBAR CONTENT PLACEMENT
-license_key = st.sidebar.text_input("Enter Premium License Key", type="password", help="Enter the unique license key sent to your email by Gumroad.")
-
-# LIVE GUMROAD VALIDATION ENGINE
-is_premium = False
-
-# Dynamic pull for the Gumroad Product Permalink
-try:
-    GUMROAD_PRODUCT_PERMALINK = st.secrets["GUMROAD_PRODUCT_PERMALINK"]
-except KeyError:
-    GUMROAD_PRODUCT_PERMALINK = "sheettosocial" # Replace this string with your exact Gumroad product URL handle
-
-if license_key:
-    with st.sidebar.spinner("Verifying License Key..."):
-        try:
-            api_url = "https://gumroad.com"
-            payload = {
-                "product_permalink": GUMROAD_PRODUCT_PERMALINK,
-                "license_key": license_key,
-                "increment_uses_count": "true" 
-            }
-            response = requests.post(api_url, data=payload, timeout=10)
-            data = response.json()
-            
-            if response.status_code == 200 and data.get("success"):
-                uses = data.get("uses", 1)
-                if uses > 5:
-                    st.sidebar.error("❌ Key Blocked: Exceeded maximum multi device sharing limits.")
-                else:
-                    is_premium = True
-            else:
-                st.sidebar.error("❌ Invalid License Key. Purchase a valid key below.")
-        except Exception:
-            try:
-                if license_key == st.secrets["PREMIUM_LICENSE_KEY"]:
-                    is_premium = True
-            except KeyError:
-                if license_key == "DEEYARO-ADMIN-99X":
-                    is_premium = True
-                else:
-                    st.sidebar.error("❌ Verification server timeout. Please try again.")
-
-# NEW LAYOUT POSITIONING: Insert marketing block ABOVE validation status if not premium
-if not is_premium:
-    st.sidebar.markdown("---")
-    st.sidebar.markdown("### 🚀 Unlock Copy & Unlimited Rows")
-    st.sidebar.link_button("👉 Get Your License Key Here", "https://gumroad.com", use_container_width=True) # Replace URL with your exact custom Gumroad link
-    st.sidebar.markdown("---")
-
-# Render validation messaging below the checkout CTA
-if is_premium:
-    st.sidebar.success("🎉 SheetToSocial Premium Active! Copy Mode Unlocked.")
-else:
-    st.sidebar.info("Free Version Active: Copying text is restricted.")
-
-# AIRTIGHT ANTI-COPY ENGINE: Complete selection and clipboard lockdown for unpaid tier
-if not is_premium:
-    st.markdown("""
-        <style>
-        div[data-testid="stTextArea"] {
-            user-select: none !important;
-            -webkit-user-select: none !important;
-            -moz-user-select: none !important;
-            -ms-user-select: none !important;
-            pointer-events: none !important; 
-        }
-        textarea {
-            user-select: none !important;
-            -webkit-user-select: none !important;
-            -moz-user-select: none !important;
-            -ms-user-select: none !important;
-            pointer-events: none !important;
-        }
-        </style>
-    """, unsafe_allow_html=True)
 
 # 3. File Upload & Processing Logic
 uploaded_file = st.file_uploader("Upload your product Excel or CSV sheet", type=["csv", "xlsx"])
