@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import os
 
-# 1. Page Configuration & Styling 
+# 1. Page Configuration & Styling
 st.set_page_config(page_title="SheetToSocial | Deeyaro Digital", page_icon="🌐", layout="centered")
 
 # PRODUCT BRANDING: Displays the SheetToSocial logo at the top center
@@ -16,7 +16,7 @@ st.title("🌐 SheetToSocial")
 st.caption("An exclusive high-leverage utility developed by DEEYARO DIGITAL")
 st.subheader("Transform messy spreadsheets into gorgeous, ready-to-post social media text instantly.")
 
-# NEW FEATURE: Interactive "How to Use" Guide for Users
+# Interactive "How to Use" Guide for Users
 with st.expander("📖 Need Help? Click here for the 3-Step Quick Start Guide", expanded=False):
     st.markdown("""
     ### 👋 Welcome to SheetToSocial! Follow these simple steps:
@@ -38,20 +38,20 @@ if os.path.exists(agency_logo):
 else:
     st.sidebar.markdown("### 🏢 **DEEYARO DIGITAL**")
 
-license_key = st.sidebar.text_input("Enter Premium License Key", type="password", help="Leave blank for Free Version (2 rows limit)")
+license_key = st.sidebar.text_input("Enter Premium License Key", type="password", help="Leave blank for Free Version (Watermarked Preview)")
 
 is_premium = (license_key == "GROWBUSINESS2027")
 
 if is_premium:
-    st.sidebar.success("🎉 SheetToSocial Premium Active! Unlimited Rows unlocked.")
+    st.sidebar.success("🎉 SheetToSocial Premium Active! Full Mode Unlocked.")
 else:
-    st.sidebar.info("Free Version Active: Limited to processing 2 rows.")
+    st.sidebar.info("Free Version Active: Watermarks applied to output.")
 
 # Premium Marketing Feature inside the Sidebar to drive sales
 if not is_premium:
     st.sidebar.markdown("---")
-    st.sidebar.markdown("### 🚀 Unlock Unlimited Rows")
-    st.sidebar.markdown("Process hundreds of products at once and unlock premium templates inside SheetToSocial.")
+    st.sidebar.markdown("### 🚀 Remove Watermarks & Limits")
+    st.sidebar.markdown("Process unlimited products at once and clean all promotional watermarks from your final social copy.")
     st.sidebar.markdown("[👉 Get Your Lifetime License Key Here](https://gumroad.com)") # Paste your actual Gumroad link here
 
 # 3. File Upload & Processing Logic
@@ -69,7 +69,7 @@ if uploaded_file is not None:
         # Apply row restrictions if not premium
         if not is_premium:
             df = df.head(2)
-            st.warning("Showing first 2 rows. Upgrade to SheetToSocial Premium to format your entire sheet instantly!")
+            st.warning("🔒 Free Preview Mode: Showing first 2 rows with watermarks. Upgrade to Premium to unlock clean outputs for your entire sheet!")
         
         # Dynamic Column Mapping
         columns = df.columns.tolist()
@@ -121,16 +121,20 @@ if uploaded_file is not None:
                     footer = "👋 Drop us a DM to order yours today! Free shipping included 🎉"
                     price_line = f"💸 {bold_start}Price:{bold_end} {p_price}"
                 
+                # ENFORCE WATERMARK IF NOT PREMIUM
+                # This injects highly visible promotional blocks right into the middle of the text boxes, forcing a purchase.
+                watermark_block = "" if is_premium else "\n⚠️ [GENERATED VIA SHEETTOSOCIAL FREE VERSION - UPGRADE TO REMOVE THIS LINE]\n"
+                
                 # Recompiling into the final Omnichannel Structural Template
                 post_template = f"""{header}
 
-{price_line}
+{price_line}{watermark_block}
 📝 {bold_start}Details:{bold_end} {p_desc}
 {p_link}
 {footer}"""
                 
                 # Rendering copyable text areas
-                st.text_area(f"📦 Product Box {index + 1} ({p_name})", value=post_template, height=220)
+                st.text_area(f"📦 Product Box {index + 1} ({p_name})", value=post_template, height=240)
                 st.divider()
                 
     except Exception as e:
