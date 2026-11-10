@@ -42,10 +42,20 @@ st.sidebar.title("🔐 License Validation")
 
 license_key = st.sidebar.text_input("Enter Premium License Key", type="password", help="Enter the unique license key sent to your email by Gumroad.")
 
-# LIVE GUMROAD VALIDATION ENGINE
-is_premium = False
+# INITIALIZE SESSIONS: Standard runtime state definitions to prevent repetitive API loops
+if "is_premium_cached" not in st.session_state:
+    st.session_state["is_premium_cached"] = False
+if "cached_key" not in st.session_state:
+    st.session_state["cached_key"] = ""
 
-# FIXED: Fallback parameter defaults exactly to your official unique Gumroad Product ID
+# Reset state safely if the user changes or clears the text box input
+if license_key != st.session_state["cached_key"]:
+    st.session_state["is_premium_cached"] = False
+    st.session_state["cached_key"] = license_key
+
+is_premium = st.session_state["is_premium_cached"]
+
+# Fallback parameter defaults exactly to your official unique Gumroad Product ID
 try:
     GUMROAD_PRODUCT_ID = st.secrets["GUMROAD_PRODUCT_ID"]
 except KeyError:
@@ -55,29 +65,30 @@ if license_key:
     # First priority validation: check against your permanent master admin testing key string
     if license_key == "DEEYARO-ADMIN-99X":
         is_premium = True
+        st.session_state["is_premium_cached"] = True
         st.sidebar.success("🎉 Admin Override Mode Active.")
     else:
-        # Secondary priority validation: query Streamlit cloud secret settings first or proceed to live Gumroad API fallback
+        # Secondary priority validation: query Streamlit cloud secret settings first
         try:
             if license_key == st.secrets["PREMIUM_LICENSE_KEY"]:
                 is_premium = True
+                st.session_state["is_premium_cached"] = True
                 st.sidebar.success("🎉 SheetToSocial Premium Active! Copy Mode Unlocked.")
         except KeyError:
             pass
             
+        # Third priority: Connect directly to the live verification servers ONLY if not cached in memory
         if not is_premium:
             with st.sidebar.spinner("Verifying License Key..."):
                 try:
-                    api_url = "https://api.gumroad.com/v2/licenses/verify"
+                    api_url = "https://gumroad.com"
                     
-                    # FIXED: Swapped out 'product_permalink' parameter key for the updated, mandatory 'product_id' parameter
                     payload = {
                         "product_id": str(GUMROAD_PRODUCT_ID).strip(),
                         "license_key": str(license_key).strip(),
                         "increment_uses_count": "true" 
                     }
                     
-                    # Gumroad expects form parameters natively for the verify endpoint
                     response = requests.post(api_url, data=payload, timeout=12)
                     data = response.json()
                     
@@ -87,19 +98,20 @@ if license_key:
                             st.sidebar.error("❌ Key Blocked: Exceeded maximum multi-device sharing limits.")
                         else:
                             is_premium = True
+                            st.session_state["is_premium_cached"] = True
                             st.sidebar.success("🎉 SheetToSocial Premium Active! Copy Mode Unlocked.")
                     else:
                         st.sidebar.error("❌ Invalid License Key. Purchase a valid key below.")
                 except Exception:
                     st.sidebar.error("❌ Verification server timeout. Please try again.")
 
-if not license_key:
+if not is_premium:
     st.sidebar.info("Free Version Active: Copying text is restricted.")
 
 # Premium Marketing Feature inside the Sidebar to drive sales
 if not is_premium:
     st.sidebar.markdown("### 🚀 Unlock Copy & Unlimited Rows")
-    st.sidebar.link_button("👉 Get Your License Key Here", "https://deeyarodigital.gumroad.com/l/sheettosocial", use_container_width=True) 
+    st.sidebar.link_button("👉 Get Your License Key Here", "https://gumroad.com", use_container_width=True) 
     st.sidebar.markdown("Remove text copy protection, unlock full sheet conversions, and grab clean copy-ready outputs.")
 
 # Layout lock checks out here
@@ -198,10 +210,8 @@ if uploaded_file is not None:
 📝 {bold_start}Details:{bold_end} {p_desc}
 {p_link}
 {footer}"""
-                
-                # Rendering copyable text areas
-                st.text_area(f"📦 Product Box {index + 1} ({p_name})", value=post_template, height=220)
-                st.divider()
-                
-    except Exception as e:
-        st.error(f"Error reading file: {e}")
+# Rendering copyable text areas
+st.text_area(f"📦 Product Box {index + 1} ({p_name})", value=post_template, height=220)
+st.divider()
+except Exception as e:
+st.error(f"Error reading file: {e}")
