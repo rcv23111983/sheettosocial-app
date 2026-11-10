@@ -13,7 +13,7 @@ else:
     st.markdown("### 🌐 **SheetToSocial**")
 
 st.title("🌐 SheetToSocial")
-st.caption("An exclusive high-leverage utility developed by DEEYARO DIGITAL")
+st.caption("An Exclusive High-Leverage Utility Developed by DEEYARO DIGITAL")
 st.subheader("Transform messy spreadsheets into gorgeous, ready-to-post social media text instantly.")
 
 # Interactive "How to Use" Guide for Users
@@ -40,7 +40,14 @@ else:
 
 license_key = st.sidebar.text_input("Enter Premium License Key", type="password", help="Leave blank for Free Version (Copy Protection Active)")
 
-is_premium = (license_key == "GROWBUSINESS2027")
+# SECURE SECRETS ENGINE: Dynamically fetches the validation key from your private dashboard settings
+try:
+    SECRET_KEY = st.secrets["PREMIUM_LICENSE_KEY"]
+except KeyError:
+    # Fail-safe backup value if dashboard panel setup is pending
+    SECRET_KEY = "GROWBUSINESS2027" 
+
+is_premium = (license_key == SECRET_KEY)
 
 if is_premium:
     st.sidebar.success("🎉 SheetToSocial Premium Active! Copy Mode Unlocked.")
@@ -54,7 +61,7 @@ if not is_premium:
     st.sidebar.markdown("Remove text copy protection, unlock full sheet conversions, and grab clean copy-ready outputs.")
     st.sidebar.markdown("[👉 Get Your Lifetime License Key Here](https://gumroad.com)") # Paste your actual Gumroad link here
 
-# AIRTIGHT ANTI-COPY ENGINE: Complete selection and clipboard lockdown
+# AIRTIGHT ANTI-COPY ENGINE: Complete selection and clipboard lockdown for unpaid tier
 if not is_premium:
     st.markdown("""
         <style>
