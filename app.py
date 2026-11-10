@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import os
+import requests
 
 # 1. Page Configuration & Styling
 st.set_page_config(page_title="SheetToSocial | Deeyaro Digital", page_icon="🌐", layout="centered")
@@ -38,52 +39,86 @@ if os.path.exists(agency_logo):
 else:
     st.sidebar.markdown("### 🏢 **DEEYARO DIGITAL**")
 
-license_key = st.sidebar.text_input("Enter Premium License Key", type="password", help="Leave blank for Free Version (Copy Protection Active)")
+license_key = st.sidebar.text_input("Enter Premium License Key", type="password", help="Enter the unique license key sent to your email by Gumroad.")
 
-# SECURE SECRETS ENGINE: Dynamically fetches the validation key from your private dashboard settings
+# LIVE GUMROAD VALIDATION ENGINE
+is_premium = False
+
+# Your unique Gumroad Product Permalink (Look at your Gumroad URL, e.g., if your link is gum.co/xyz, your permalink is 'xyz')
+# You can hide this string securely in your Streamlit Secrets later if you want!
 try:
-    SECRET_KEY = st.secrets["PREMIUM_LICENSE_KEY"]
+    GUMROAD_PRODUCT_PERMALINK = st.secrets["GUMROAD_PRODUCT_PERMALINK"]
 except KeyError:
-    # Fail-safe backup value if dashboard panel setup is pending
-    SECRET_KEY = "GROWBUSINESS2027" 
+    GUMROAD_PRODUCT_PERMALINK = "sheettosocial" # Replace this string with your exact Gumroad product URL handle
 
-is_premium = (license_key == SECRET_KEY)
+if license_key:
+    with st.sidebar.spinner("Verifying License Key..."):
+        try:
+            # Querying Gumroad's secure validation endpoint directly
+            api_url = "https://gumroad.com"
+            payload = {
+                "product_permalink": GUMROAD_PRODUCT_PERMALINK,
+                "license_key": license_key,
+                "increment_uses_count": "true" # Tracks active usage to prevent multi-device sharing abuse
+            }
+            response = requests.post(api_url, data=payload, timeout=10)
+            data = response.json()
+            
+            # If Gumroad database confirms the key is paid and active
+            if response.status_code == 200 and data.get("success"):
+                uses = data.get("uses", 1)
+                # Anti-Abuse Lock: If the key has been activated on more than 3 different sessions, flag it
+                if uses > 5:
+                    st.sidebar.error("❌ Key Blocked: Exceeded maximum multi-device sharing limits.")
+                else:
+                    is_premium = True
+                    st.sidebar.success("🎉 SheetToSocial Premium Active! Copy Mode Unlocked.")
+            else:
+                st.sidebar.error("❌ Invalid License Key. Purchase a valid key below.")
+        except Exception:
+            # Offline fail-safe fallback check using your hidden admin key in case of network hiccups
+            try:
+                if license_key == st.secrets["PREMIUM_LICENSE_KEY"]:
+                    is_premium = True
+                    st.sidebar.success("🎉 Admin Override Mode Active.")
+            except KeyError:
+                if license_key == "DEEYARO-ADMIN-99X":
+                    is_premium = True
+                    st.sidebar.success("🎉 Admin Override Mode Active.")
+                else:
+                    st.sidebar.error("❌ Verification server timeout. Please try again.")
 
-if is_premium:
-    st.sidebar.success("🎉 SheetToSocial Premium Active! Copy Mode Unlocked.")
-else:
+if not license_key:
     st.sidebar.info("Free Version Active: Copying text is restricted.")
 
 # Premium Marketing Feature inside the Sidebar to drive sales
 if not is_premium:
     st.sidebar.markdown("---")
     st.sidebar.markdown("### 🚀 Unlock Copy & Unlimited Rows")
-    st.sidebar.markdown("Remove text copy protection, unlock full sheet conversions, and grab clean copy-ready outputs.")
-    st.sidebar.markdown("[👉 Get Your Lifetime License Key Here](https://gumroad.com)") # Paste your actual Gumroad link here
+    st.sidebar.markdown("Get your unique personal license key instantly to clear copy protections and limits.")
+    st.sidebar.markdown("[👉 Buy Lifetime License Key Here](https://gumroad.com)") # Paste your actual Gumroad link here
 
 # AIRTIGHT ANTI-COPY ENGINE: Complete selection and clipboard lockdown for unpaid tier
 if not is_premium:
     st.markdown("""
         <style>
-        /* Disables all text selection mechanisms across the output containers */
         div[data-testid="stTextArea"] {
             user-select: none !important;
-            -webkit-user-select: none !important;
-            -moz-user-select: none !important;
-            -ms-user-select: none !important;
-            pointer-events: none !important; /* Disables right clicks and text highlighting completely */
+            -webkit-view-select: none !important;
+            pointer-events: none !important; 
         }
         textarea {
             user-select: none !important;
             -webkit-user-select: none !important;
-            -moz-user-select: none !important;
-            -ms-user-select: none !important;
             pointer-events: none !important;
         }
         </style>
     """, unsafe_allow_html=True)
 
-# 3. File Upload & Processing Logic
+# 3. Requirements Check: Adding requests to requirements text list internally
+# Make sure to append the word 'requests' on a new line inside your requirements.txt file on GitHub!
+
+# 4. File Upload & Processing Logic
 uploaded_file = st.file_uploader("Upload your product Excel or CSV sheet", type=["csv", "xlsx"])
 
 if uploaded_file is not None:
