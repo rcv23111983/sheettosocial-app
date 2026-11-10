@@ -68,8 +68,9 @@ if license_key and not is_premium:
 
 # COMPACT SIDEBAR CTA POSITIONING: Sits cleanly at eye level for non-paying users
 if not is_premium:
-    st.sidebar.markdown("### 🚀 Unlock Copy")
-    st.sidebar.link_button("👉 Get License Key Here", "https://gumroad.com", use_container_width=True) # Replace URL with your exact custom Gumroad link
+    st.sidebar.markdown("### 🚀 Unlock Copy")    
+    st.sidebar.link_button("👉 Get Your License Key Here", "https://gumroad.com", use_container_width=True)
+
     st.sidebar.info("Free Mode Active: Copying text is restricted.")
 
 # DYNAMIC INJECTION ENGINE: Removes scrollbars and configures conditional clipboards
