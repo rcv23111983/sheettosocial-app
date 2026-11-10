@@ -2,15 +2,15 @@ import streamlit as st
 import pandas as pd
 import os
 
-# 1. Page Configuration & Styling using SheetToSocial
+# 1. Page Configuration & Styling
 st.set_page_config(page_title="SheetToSocial | Deeyaro Digital", page_icon="📈", layout="centered")
 
-# Branding: Displaying the logo at the top if logo.png exists in the folder
-logo_filename = "logo.png"  
-if os.path.exists(logo_filename):
-    st.image(logo_filename, width=180)
+# PRODUCT BRANDING: Displays the SheetToSocial logo at the top center
+product_logo = "sheet_logo.png"
+if os.path.exists(product_logo):
+    st.image(product_logo, width=150)
 else:
-    st.markdown("### 🏢 **DEEYARO DIGITAL**")
+    st.markdown("### 📈 **SheetToSocial**")
 
 st.title("📈 SheetToSocial")
 st.caption("An exclusive high-leverage utility developed by DEEYARO DIGITAL")
@@ -19,9 +19,12 @@ st.subheader("Transform messy spreadsheets into gorgeous, ready-to-post social m
 # 2. Premium / Sidebar Management
 st.sidebar.title("🔐 License Validation")
 
-# Display smaller brand image inside the sidebar menu if available
-if os.path.exists(logo_filename):
-    st.sidebar.image(logo_filename, use_container_width=True)
+# AGENCY BRANDING: Displays your official DEEYARO DIGITAL logo inside the sidebar
+agency_logo = "logo.png"  
+if os.path.exists(agency_logo):
+    st.sidebar.image(agency_logo, use_container_width=True)
+else:
+    st.sidebar.markdown("### 🏢 **DEEYARO DIGITAL**")
 
 license_key = st.sidebar.text_input("Enter Premium License Key", type="password", help="Leave blank for Free Version (2 rows limit)")
 
