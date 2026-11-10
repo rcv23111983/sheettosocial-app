@@ -84,7 +84,7 @@ css_style = """
         padding-bottom: 1rem !important;
     }
     
-    /* NEW LOGO CENTERING ALIGNMENT: Forces image blocks inside the sidebar to remain centered */
+    /* LOGO CENTERING ALIGNMENT: Forces image blocks inside the sidebar to remain centered */
     [data-testid="stSidebar"] [data-testid="stImage"] {
         display: flex !important;
         justify-content: center !important;
@@ -112,7 +112,8 @@ if not is_premium:
     """
 
 css_style += "</style>"
-st.markdown(css_style, unsafe_allowed_html=True)
+# FIXED: Changed from unsafe_allowed_html=True to unsafe_allow_html=True
+st.markdown(css_style, unsafe_allow_html=True)
 
 # PRODUCT BRANDING: Displays the SheetToSocial logo at the top center
 product_logo = "sheet_logo.png"
