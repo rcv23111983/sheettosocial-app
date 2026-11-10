@@ -95,7 +95,7 @@ if not license_key:
 # Premium Marketing Feature inside the Sidebar to drive sales
 if not is_premium:
     st.sidebar.markdown("### 🚀 Unlock Copy & Unlimited Rows")
-    st.sidebar.link_button("👉 Get Your License Key Here", "https://gumroad.com", use_container_width=True) 
+    st.sidebar.link_button("👉 Get Your License Key Here", "https://deeyarodigital.gumroad.com/l/sheettosocial", use_container_width=True) 
     st.sidebar.markdown("Remove text copy protection, unlock full sheet conversions, and grab clean copy-ready outputs.")
 
 # Layout lock checks out here
