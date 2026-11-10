@@ -38,21 +38,38 @@ if os.path.exists(agency_logo):
 else:
     st.sidebar.markdown("### 🏢 **DEEYARO DIGITAL**")
 
-license_key = st.sidebar.text_input("Enter Premium License Key", type="password", help="Leave blank for Free Version (Watermarked Preview)")
+license_key = st.sidebar.text_input("Enter Premium License Key", type="password", help="Leave blank for Free Version (Copy Protection Active)")
 
 is_premium = (license_key == "GROWBUSINESS2027")
 
 if is_premium:
-    st.sidebar.success("🎉 SheetToSocial Premium Active! Full Mode Unlocked.")
+    st.sidebar.success("🎉 SheetToSocial Premium Active! Copy Mode Unlocked.")
 else:
-    st.sidebar.info("Free Version Active: Watermarks applied to output.")
+    st.sidebar.info("Free Version Active: Copying text is restricted.")
 
 # Premium Marketing Feature inside the Sidebar to drive sales
 if not is_premium:
     st.sidebar.markdown("---")
-    st.sidebar.markdown("### 🚀 Remove Watermarks & Limits")
-    st.sidebar.markdown("Process unlimited products at once and clean all promotional watermarks from your final social copy.")
+    st.sidebar.markdown("### 🚀 Unlock Copy & Unlimited Rows")
+    st.sidebar.markdown("Remove text copy protection, unlock full sheet conversions, and grab clean copy-ready outputs.")
     st.sidebar.markdown("[👉 Get Your Lifetime License Key Here](https://gumroad.com)") # Paste your actual Gumroad link here
+
+# ANTI-COPY ENGINE: Inject dynamic CSS rules based on validation state
+if not is_premium:
+    # Injects strict web rules that block mouse selections, highlights, and touches on generated areas
+    st.markdown("""
+        <style>
+        div[data-testid="stTextArea"] textarea {
+            user-select: none !important;
+            -webkit-user-select: none !important;
+            -moz-user-select: none !important;
+            -ms-user-select: none !important;
+            pointer-events: none !important;
+            background-color: #f5f5f5 !important;
+            color: #777777 !important;
+        }
+        </style>
+    """, unsafe_allowed_html=True)
 
 # 3. File Upload & Processing Logic
 uploaded_file = st.file_uploader("Upload your product Excel or CSV sheet", type=["csv", "xlsx"])
@@ -69,7 +86,7 @@ if uploaded_file is not None:
         # Apply row restrictions if not premium
         if not is_premium:
             df = df.head(2)
-            st.warning("🔒 Free Preview Mode: Showing first 2 rows with watermarks. Upgrade to Premium to unlock clean outputs for your entire sheet!")
+            st.warning("🔒 Free Preview Mode: Showing 2 rows. Copying text is disabled until Premium is active.")
         
         # Dynamic Column Mapping
         columns = df.columns.tolist()
@@ -121,20 +138,16 @@ if uploaded_file is not None:
                     footer = "👋 Drop us a DM to order yours today! Free shipping included 🎉"
                     price_line = f"💸 {bold_start}Price:{bold_end} {p_price}"
                 
-                # ENFORCE WATERMARK IF NOT PREMIUM
-                # This injects highly visible promotional blocks right into the middle of the text boxes, forcing a purchase.
-                watermark_block = "" if is_premium else "\n⚠️ [GENERATED VIA SHEETTOSOCIAL FREE VERSION - UPGRADE TO REMOVE THIS LINE]\n"
-                
                 # Recompiling into the final Omnichannel Structural Template
                 post_template = f"""{header}
 
-{price_line}{watermark_block}
+{price_line}
 📝 {bold_start}Details:{bold_end} {p_desc}
 {p_link}
 {footer}"""
                 
                 # Rendering copyable text areas
-                st.text_area(f"📦 Product Box {index + 1} ({p_name})", value=post_template, height=240)
+                st.text_area(f"📦 Product Box {index + 1} ({p_name})", value=post_template, height=220)
                 st.divider()
                 
     except Exception as e:
