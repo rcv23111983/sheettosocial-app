@@ -56,7 +56,7 @@ if not is_premium:
 
 # ANTI-COPY ENGINE: Inject dynamic CSS rules based on validation state
 if not is_premium:
-    # Injects strict web rules that block mouse selections, highlights, and touches on generated areas
+    # FIXED: Corrected parameter spelling to unsafe_allow_html=True
     st.markdown("""
         <style>
         div[data-testid="stTextArea"] textarea {
@@ -69,7 +69,7 @@ if not is_premium:
             color: #777777 !important;
         }
         </style>
-    """, unsafe_allowed_html=True)
+    """, unsafe_allow_html=True)
 
 # 3. File Upload & Processing Logic
 uploaded_file = st.file_uploader("Upload your product Excel or CSV sheet", type=["csv", "xlsx"])
