@@ -12,10 +12,13 @@ is_premium = False
 # 2. Premium / Sidebar Management
 st.sidebar.title("🔐 License Validation")
 
-# AGENCY BRANDING: Displays your official DEEYARO DIGITAL logo inside the sidebar
+# AGENCY BRANDING: Fixed alignment by creating a centered responsive column block inside the sidebar
 agency_logo = "logo.png"  
 if os.path.exists(agency_logo):
-    st.sidebar.image(agency_logo, width=160)
+    # Splits the sidebar width into a 3-column layout grid to lock the logo in the absolute center
+    side_col1, side_col2, side_col3 = st.sidebar.columns([1, 4, 1])
+    with side_col2:
+        st.image(agency_logo, use_container_width=True)
 else:
     st.sidebar.markdown("### 🏢 **DEEYARO DIGITAL**")
 
@@ -68,7 +71,7 @@ if is_premium:
 else:
     st.sidebar.info("Free Mode Active.")
 
-# DYNAMIC INJECTION ENGINE: Removes scrollbars, centers image layout, and locks clipboard selections natively
+# DYNAMIC INJECTION ENGINE: Removes scrollbars and locks clipboard selections natively
 css_style = """
     <style>
     /* 1. Global Sidebar Layout Optimization to remove scrollbars */
@@ -82,18 +85,6 @@ css_style = """
     div[data-testid="stSidebarUserContent"] {
         padding-top: 1rem !important;
         padding-bottom: 1rem !important;
-    }
-    
-    /* THE EXACT LOGO CENTER ALIGNMENT FIX: Dynamic structural targeting override */
-    div[data-testid="stSidebarUserContent"] div[data-testid="stVerticalBlock"] div[data-testid="stElementContainer"]:nth-child(2) {
-        display: flex !important;
-        justify-content: center !important;
-        align-items: center !important;
-        text-align: center !important;
-        width: 100% !important;
-    }
-    div[data-testid="stSidebarUserContent"] div[data-testid="stVerticalBlock"] div[data-testid="stElementContainer"]:nth-child(2) img {
-        margin: 0 auto !important;
     }
 """
 
