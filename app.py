@@ -54,19 +54,24 @@ if not is_premium:
     st.sidebar.markdown("Remove text copy protection, unlock full sheet conversions, and grab clean copy-ready outputs.")
     st.sidebar.markdown("[👉 Get Your Lifetime License Key Here](https://gumroad.com)") # Paste your actual Gumroad link here
 
-# ANTI-COPY ENGINE: Inject dynamic CSS rules based on validation state
+# AIRTIGHT ANTI-COPY ENGINE: Complete selection and clipboard lockdown
 if not is_premium:
-    # FIXED: Corrected parameter spelling to unsafe_allow_html=True
     st.markdown("""
         <style>
-        div[data-testid="stTextArea"] textarea {
+        /* Disables all text selection mechanisms across the output containers */
+        div[data-testid="stTextArea"] {
+            user-select: none !important;
+            -webkit-user-select: none !important;
+            -moz-user-select: none !important;
+            -ms-user-select: none !important;
+            pointer-events: none !important; /* Disables right clicks and text highlighting completely */
+        }
+        textarea {
             user-select: none !important;
             -webkit-user-select: none !important;
             -moz-user-select: none !important;
             -ms-user-select: none !important;
             pointer-events: none !important;
-            background-color: #f5f5f5 !important;
-            color: #777777 !important;
         }
         </style>
     """, unsafe_allow_html=True)
