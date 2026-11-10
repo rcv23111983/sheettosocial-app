@@ -40,74 +40,69 @@ else:
 
 st.sidebar.title("🔐 License Validation")
 
-# INITIALIZE SESSIONS: Standard runtime memory configurations
-if "premium_unlocked" not in st.session_state:
-    st.session_state["premium_unlocked"] = False
-
 license_key = st.sidebar.text_input("Enter Premium License Key", type="password", help="Enter the unique license key sent to your email by Gumroad.")
 
-# ACTION TRIGGER: Verification execution control layout
-verify_clicked = st.sidebar.button("🔐 Verify Key", use_container_width=True)
+# LIVE GUMROAD VALIDATION ENGINE
+is_premium = False
 
+# FIXED: Fallback parameter defaults exactly to your official unique Gumroad Product ID
 try:
     GUMROAD_PRODUCT_ID = st.secrets["GUMROAD_PRODUCT_ID"]
 except KeyError:
     GUMROAD_PRODUCT_ID = "YCWlhKUBLaOrVPoC3KK3LA==" 
 
-# Verification processing loops
-if verify_clicked and license_key:
-    # 1. First priority validation: Admin master bypass key string
+if license_key:
+    # First priority validation: check against your permanent master admin testing key string
     if license_key == "DEEYARO-ADMIN-99X":
-        st.session_state["premium_unlocked"] = True
+        is_premium = True
         st.sidebar.success("🎉 Admin Override Mode Active.")
     else:
-        # 2. Secondary priority validation: local secret variable matching
-        is_secret_match = False
+        # Secondary priority validation: query Streamlit cloud secret settings first or proceed to live Gumroad API fallback
         try:
             if license_key == st.secrets["PREMIUM_LICENSE_KEY"]:
-                st.session_state["premium_unlocked"] = True
-                is_secret_match = True
+                is_premium = True
                 st.sidebar.success("🎉 SheetToSocial Premium Active! Copy Mode Unlocked.")
         except KeyError:
             pass
             
-        # 3. Third priority: Live Gumroad API validation query with custom header layout
-        if not is_secret_match:
+        if not is_premium:
             with st.sidebar.spinner("Verifying License Key..."):
                 try:
-                    # FIXED: Directing to the strict API endpoint while preserving your exact original request mapping payload
-                    api_url = "https://gumroad.com"
+                    api_url = "https://api.gumroad.com/v2/licenses/verify"
+                    
+                    # FIXED: Swapped out 'product_permalink' parameter key for the updated, mandatory 'product_id' parameter
                     payload = {
                         "product_id": str(GUMROAD_PRODUCT_ID).strip(),
                         "license_key": str(license_key).strip(),
-                        "increment_uses_count": "true"
+                        "increment_uses_count": "true" 
                     }
                     
+                    # Gumroad expects form parameters natively for the verify endpoint
                     response = requests.post(api_url, data=payload, timeout=12)
                     data = response.json()
                     
                     if response.status_code == 200 and data.get("success"):
-                        st.session_state["premium_unlocked"] = True
-                        st.sidebar.success("🎉 SheetToSocial Premium Active! Copy Mode Unlocked.")
+                        uses = data.get("uses", 1)
+                        if uses > 5:
+                            st.sidebar.error("❌ Key Blocked: Exceeded maximum multi-device sharing limits.")
+                        else:
+                            is_premium = True
+                            st.sidebar.success("🎉 SheetToSocial Premium Active! Copy Mode Unlocked.")
                     else:
-                        st.session_state["premium_unlocked"] = False
                         st.sidebar.error("❌ Invalid License Key. Purchase a valid key below.")
                 except Exception:
                     st.sidebar.error("❌ Verification server timeout. Please try again.")
 
-# Check the global validation profile state flag
-is_premium = st.session_state["premium_unlocked"]
-
-if not is_premium:
+if not license_key:
     st.sidebar.info("Free Version Active: Copying text is restricted.")
 
 # Premium Marketing Feature inside the Sidebar to drive sales
 if not is_premium:
     st.sidebar.markdown("### 🚀 Unlock Copy & Unlimited Rows")
-    st.sidebar.link_button("👉 Get Your License Key Here", "https://deeyarodigital.gumroad.com/l/sheettosocial", use_container_width=True)
+    st.sidebar.link_button("👉 Get Your License Key Here", "https://deeyarodigital.gumroad.com/l/sheettosocial", use_container_width=True) 
     st.sidebar.markdown("Remove text copy protection, unlock full sheet conversions, and grab clean copy-ready outputs.")
 
-# Layout lock shield execution blocks
+# Layout lock checks out here
 if not is_premium:
     st.markdown("""
         <style>
@@ -121,6 +116,8 @@ if not is_premium:
         textarea {
             user-select: none !important;
             -webkit-user-select: none !important;
+            -moz-user-select: none !important;
+            -ms-user-select: none !important;
             pointer-events: none !important;
             background-color: #f5f5f5 !important;
         }
@@ -190,7 +187,7 @@ if uploaded_file is not None:
                     footer = "✨ Premium Quality Guaranteed. Direct Message for inquiries or corporate orders."
                     price_line = f"▫️ {bold_start}Investment:{bold_end} {p_price}"
                 else:
-                    header = f"✨ Hey friends! Look at this: {bold_start}{p_name}{bold_end} ✨"
+                    header = f"✨ Hey friends! Look at this: {bold_start}{bold_end} {p_name}{bold_end} ✨"
                     footer = "👋 Drop us a DM to order yours today! Free shipping included 🎉"
                     price_line = f"💸 {bold_start}Price:{bold_end} {p_price}"
                 
@@ -205,5 +202,6 @@ if uploaded_file is not None:
                 # Rendering copyable text areas
                 st.text_area(f"📦 Product Box {index + 1} ({p_name})", value=post_template, height=220)
                 st.divider()
+                
     except Exception as e:
         st.error(f"Error reading file: {e}")
