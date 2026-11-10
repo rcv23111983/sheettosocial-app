@@ -84,17 +84,15 @@ css_style = """
         padding-bottom: 1rem !important;
     }
     
-    /* DUAL-LAYER LOGO CENTERING: Overrides left layout alignment to position your logo perfectly in the center */
-    [data-testid="stSidebar"] [data-testid="stImage"],
-    [data-testid="stSidebar"] .stImage {
+    /* THE EXACT LOGO CENTER ALIGNMENT FIX: Dynamic structural targeting override */
+    div[data-testid="stSidebarUserContent"] div[data-testid="stVerticalBlock"] div[data-testid="stElementContainer"]:nth-child(2) {
         display: flex !important;
         justify-content: center !important;
         align-items: center !important;
         text-align: center !important;
-        margin: 0 auto !important;
+        width: 100% !important;
     }
-    [data-testid="stSidebar"] [data-testid="stImage"] img,
-    [data-testid="stSidebar"] .stImage img {
+    div[data-testid="stSidebarUserContent"] div[data-testid="stVerticalBlock"] div[data-testid="stElementContainer"]:nth-child(2) img {
         margin: 0 auto !important;
     }
 """
