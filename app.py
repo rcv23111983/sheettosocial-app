@@ -6,111 +6,6 @@ import requests
 # 1. Page Configuration & Styling
 st.set_page_config(page_title="SheetToSocial | Deeyaro Digital", page_icon="🌐", layout="centered")
 
-# INITIALIZATION & SECURE LICENSE CHECKING (Moved to the top for immediate verification)
-is_premium = False
-
-st.sidebar.title("🔐 License Validation")
-
-# AGENCY BRANDING: Centered responsive logo inside the sidebar grid cells
-agency_logo = "logo.png"  
-if os.path.exists(agency_logo):
-    side_col1, side_col2, side_col3 = st.sidebar.columns([1, 2, 1])
-    with side_col2:
-        st.image(agency_logo, use_container_width=True)
-else:
-    st.sidebar.markdown("### 🏢 **DEEYARO DIGITAL**")
-
-# Captures license entry from user
-license_key = st.sidebar.text_input("Enter Premium Key", type="password", help="Enter the unique license key sent by Gumroad.")
-
-# Dynamic pull for the Gumroad Product Permalink
-try:
-    GUMROAD_PRODUCT_PERMALINK = st.secrets["GUMROAD_PRODUCT_PERMALINK"]
-except KeyError:
-    GUMROAD_PRODUCT_PERMALINK = "sheettosocial" 
-
-# CORE VALIDATION ENGINE: Checks master override keys FIRST to prevent background locks
-if license_key == "DEEYARO-ADMIN-99X":
-    is_premium = True
-    st.sidebar.success("🎉 Admin Override Mode Active.")
-elif license_key:
-    try:
-        if license_key == st.secrets["PREMIUM_LICENSE_KEY"]:
-            is_premium = True
-            st.sidebar.success("🎉 Admin Master Key Validated.")
-    except KeyError:
-        pass
-
-# If master keys aren't matched, verify uniquely through live Gumroad endpoints
-if license_key and not is_premium:
-    with st.sidebar.spinner("Checking with servers..."):
-        try:
-            api_url = "https://gumroad.com"
-            payload = {
-                "product_permalink": GUMROAD_PRODUCT_PERMALINK,
-                "license_key": license_key,
-                "increment_uses_count": "true" 
-            }
-            response = requests.post(api_url, data=payload, timeout=10)
-            data = response.json()
-            
-            if response.status_code == 200 and data.get("success"):
-                uses = data.get("uses", 1)
-                if uses > 5:
-                    st.sidebar.error("❌ Key Blocked: Sharing Limit Exceeded.")
-                else:
-                    is_premium = True
-                    st.sidebar.success("🎉 Premium Mode Active!")
-            else:
-                st.sidebar.error("❌ Invalid Key. Try again.")
-        except Exception:
-            st.sidebar.error("❌ Verification server connection issue.")
-
-# COMPACT SIDEBAR CTA POSITIONING: Sits cleanly at eye level for non-paying users
-if not is_premium:
-    st.sidebar.markdown("### 🚀 Unlock Copy")    
-    st.sidebar.link_button("👉 Get Your License Key Here", "https://gumroad.com", use_container_width=True)
-
-    st.sidebar.info("Free Mode Active: Copying text is restricted.")
-
-# DYNAMIC INJECTION ENGINE: Removes scrollbars and configures conditional clipboards
-css_style = """
-    <style>
-    /* 1. Global Sidebar Layout Optimization to remove scrollbars */
-    section[data-testid="stSidebar"] div.stMainBlockContainer {
-        padding-top: 1.5rem !important;
-        padding-bottom: 1rem !important;
-    }
-    section[data-testid="stSidebar"] {
-        overflow: hidden !important; 
-    }
-    div[data-testid="stSidebarUserContent"] {
-        padding-top: 1rem !important;
-        padding-bottom: 1rem !important;
-    }
-"""
-
-# Appends clipboard-blocking layers ONLY if user is confirmed on the unpaid tier
-if not is_premium:
-    css_style += """
-    /* 2. Anti-Copy selection and clipboard lockdown for unpaid tier */
-    div[data-testid="stTextArea"] {
-        user-select: none !important;
-        -webkit-user-select: none !important;
-        -moz-user-select: none !important;
-        -ms-user-select: none !important;
-        pointer-events: none !important; 
-    }
-    textarea {
-        user-select: none !important;
-        -webkit-user-select: none !important;
-        pointer-events: none !important;
-    }
-    """
-
-css_style += "</style>"
-st.markdown(css_style, unsafe_allow_html=True)
-
 # PRODUCT BRANDING: Displays the SheetToSocial logo at the top center
 product_logo = "sheet_logo.png"
 if os.path.exists(product_logo):
@@ -133,6 +28,100 @@ with st.expander("📖 Need Help? Click here for the 3-Step Quick Start Guide", 
     
     💡 *Tip: Your data is processed entirely inside your browser session. We do not store or save your files anywhere, keeping your customer data 100% private and secure.*
     """)
+
+# 2. Premium / Sidebar Management
+
+# FIXED LOGO POSITION: Agency logo now renders first at the absolute top of the sidebar
+agency_logo = "logo.png"  
+if os.path.exists(agency_logo):
+    st.sidebar.image(agency_logo, use_container_width=True)
+else:
+    st.sidebar.markdown("### 🏢 **DEEYARO DIGITAL**")
+
+# This header now displays cleanly directly below your branding icon
+st.sidebar.title("🔐 License Validation")
+
+license_key = st.sidebar.text_input("Enter Premium License Key", type="password", help="Enter the unique license key sent to your email by Gumroad.")
+
+# LIVE GUMROAD VALIDATION ENGINE
+is_premium = False
+
+# Dynamic pull for the Gumroad Product Permalink
+try:
+    GUMROAD_PRODUCT_PERMALINK = st.secrets["GUMROAD_PRODUCT_PERMALINK"]
+except KeyError:
+    GUMROAD_PRODUCT_PERMALINK = "sheettosocial" # Replace this string with your exact Gumroad product URL handle
+
+if license_key:
+    with st.sidebar.spinner("Verifying License Key..."):
+        try:
+            # Querying Gumroad's secure validation endpoint directly
+            api_url = "https://gumroad.com"
+            payload = {
+                "product_permalink": GUMROAD_PRODUCT_PERMALINK,
+                "license_key": license_key,
+                "increment_uses_count": "true" 
+            }
+            response = requests.post(api_url, data=payload, timeout=10)
+            data = response.json()
+            
+            # If Gumroad database confirms the key is paid and active
+            if response.status_code == 200 and data.get("success"):
+                uses = data.get("uses", 1)
+                # Anti-Abuse Lock: Flag if used too many times
+                if uses > 5:
+                    st.sidebar.error("❌ Key Blocked: Exceeded maximum multi-device sharing limits.")
+                else:
+                    is_premium = True
+                    st.sidebar.success("🎉 SheetToSocial Premium Active! Copy Mode Unlocked.")
+            else:
+                st.sidebar.error("❌ Invalid License Key. Purchase a valid key below.")
+        except Exception:
+            # Offline fail-safe fallback check using your hidden admin key in case of network hiccups
+            try:
+                if license_key == st.secrets["PREMIUM_LICENSE_KEY"]:
+                    is_premium = True
+                    st.sidebar.success("🎉 Admin Override Mode Active.")
+            except KeyError:
+                if license_key == "DEEYARO-ADMIN-99X":
+                    is_premium = True
+                    st.sidebar.success("🎉 Admin Override Mode Active.")
+                else:
+                    st.sidebar.error("❌ Verification server timeout. Please try again.")
+
+if not license_key:
+    st.sidebar.info("Free Version Active: Copying text is restricted.")
+
+# Premium Marketing Feature inside the Sidebar to drive sales
+if not is_premium:
+    st.sidebar.markdown("---")
+    st.sidebar.markdown("### 🚀 Unlock Copy & Unlimited Rows")
+    st.sidebar.markdown("Get your unique personal license key instantly to clear copy protections and limits.")
+    
+    # Renders as a professional, full-width responsive action button link
+    st.sidebar.link_button("👉 Get Your License Key Here", "https://gumroad.com", use_container_width=True) # Replace URL with your exact custom Gumroad link
+
+# AIRTIGHT ANTI-COPY ENGINE: Complete selection and clipboard lockdown for unpaid tier
+if not is_premium:
+    st.markdown("""
+        <style>
+        /* Disables all text selection mechanisms across the output containers */
+        div[data-testid="stTextArea"] {
+            user-select: none !important;
+            -webkit-user-select: none !important;
+            -moz-user-select: none !important;
+            -ms-user-select: none !important;
+            pointer-events: none !important; /* Disables right clicks and text highlighting completely */
+        }
+        textarea {
+            user-select: none !important;
+            -webkit-user-select: none !important;
+            -moz-user-select: none !important;
+            -ms-user-select: none !important;
+            pointer-events: none !important;
+        }
+        </style>
+    """, unsafe_allow_html=True)
 
 # 3. File Upload & Processing Logic
 uploaded_file = st.file_uploader("Upload your product Excel or CSV sheet", type=["csv", "xlsx"])
