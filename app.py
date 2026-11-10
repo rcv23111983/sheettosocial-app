@@ -31,14 +31,6 @@ with st.expander("📖 Need Help? Click here for the 3-Step Quick Start Guide", 
 
 # 2. Premium / Sidebar Management
 
-# COMPACT SIDEBAR FIX: Shrink the blank gap at the top of the sidebar so items sit higher up
-st.markdown("""
-    <style>
-    [data-testid="stSidebarNav"] {padding-top: 0rem !important;}
-    [data-testid="stSidebarBlockContainer"] {padding-top: 1rem !important; padding-bottom: 1rem !important;}
-    </style>
-""", unsafe_allow_html=True)
-
 # Agency logo renders first at the absolute top of the sidebar
 agency_logo = "logo.png"  
 if os.path.exists(agency_logo):
@@ -59,7 +51,7 @@ except KeyError:
     GUMROAD_PRODUCT_PERMALINK = "sheettosocial" 
 
 if license_key:
-    with st.sidebar.spinner("Verifying..."):
+    with st.sidebar.spinner("Verifying License Key..."):
         try:
             api_url = "https://gumroad.com"
             payload = {
@@ -73,31 +65,37 @@ if license_key:
             if response.status_code == 200 and data.get("success"):
                 uses = data.get("uses", 1)
                 if uses > 5:
-                    st.sidebar.error("❌ Key Blocked: Device limit reached.")
+                    st.sidebar.error("❌ Key Blocked: Exceeded maximum multi-device sharing limits.")
                 else:
                     is_premium = True
-                    st.sidebar.success("🎉 Premium Unlocked!")
+                    st.sidebar.success("🎉 SheetToSocial Premium Active! Copy Mode Unlocked.")
             else:
-                st.sidebar.error("❌ Invalid License Key.")
+                st.sidebar.error("❌ Invalid License Key. Purchase a valid key below.")
         except Exception:
             try:
                 if license_key == st.secrets["PREMIUM_LICENSE_KEY"]:
                     is_premium = True
-                    st.sidebar.success("🎉 Admin Override Active.")
+                    st.sidebar.success("🎉 Admin Override Mode Active.")
             except KeyError:
                 if license_key == "DEEYARO-ADMIN-99X":
                     is_premium = True
-                    st.sidebar.success("🎉 Admin Override Active.")
+                    st.sidebar.success("🎉 Admin Override Mode Active.")
                 else:
-                    st.sidebar.error("❌ Timeout. Try again.")
+                    st.sidebar.error("❌ Verification server timeout. Please try again.")
 
 if not license_key:
-    st.sidebar.info("Free Version Active.")
+    st.sidebar.info("Free Version Active: Copying text is restricted.")
 
-# COMPACT SIDEBAR FIX: Removed long wordy sentences and placed button directly under the status notice
+# Premium Marketing Feature inside the Sidebar to drive sales
 if not is_premium:
     st.sidebar.markdown("---")
+    st.sidebar.markdown("### 🚀 Unlock Copy & Unlimited Rows")
+    
+    # POSITION SHIFT: Button is now placed directly below the header to guarantee instant visibility
     st.sidebar.link_button("👉 Get Your License Key Here", "https://gumroad.com", use_container_width=True) # Replace URL with your exact custom Gumroad link
+    
+    # Your original helpful context strings cleanly sit right underneath the button element
+    st.sidebar.markdown("Remove text copy protection, unlock full sheet conversions, and grab clean copy-ready outputs.")
 
 # AIRTIGHT ANTI-COPY ENGINE: Complete selection and clipboard lockdown for unpaid tier
 if not is_premium:
@@ -132,10 +130,12 @@ if uploaded_file is not None:
         
         st.success("File uploaded successfully to SheetToSocial!")
         
+        # Apply row restrictions if not premium
         if not is_premium:
             df = df.head(2)
             st.warning("🔒 Free Preview Mode: Showing 2 rows. Copying text is disabled until Premium is active.")
         
+        # Dynamic Column Mapping
         columns = df.columns.tolist()
         
         col1, col2 = st.columns(2)
@@ -161,14 +161,17 @@ if uploaded_file is not None:
                 p_price = row[price_col]
                 p_desc = row[desc_col]
                 
+                # Format links safely
                 if link_col == "None" or pd.isna(row[link_col]):
                     p_link = ""
                 else:
                     p_link = f"🔗 Shop Here: {row[link_col]}\n"
                 
+                # Formatting tweaks based on Platform choice
                 bold_start = "*" if "WhatsApp" in target_platform else ""
                 bold_end = "*" if "WhatsApp" in target_platform else ""
                 
+                # Copywriting updates based on Chosen Tone
                 if "Urgent" in writing_tone:
                     header = f"🚨 {bold_start}LIMITED STOCK | NEW ARRIVAL{bold_end} 🚨\n🔥 {bold_start}{p_name}{bold_end} 🔥"
                     footer = "⚡ Order Now Before It Sells Out! | DM to Secure Yours! 📦"
@@ -182,6 +185,7 @@ if uploaded_file is not None:
                     footer = "👋 Drop us a DM to order yours today! Free shipping included 🎉"
                     price_line = f"💸 {bold_start}Price:{bold_end} {p_price}"
                 
+                # Recompiling into the final Omnichannel Structural Template
                 post_template = f"""{header}
 
 {price_line}
@@ -189,6 +193,7 @@ if uploaded_file is not None:
 {p_link}
 {footer}"""
                 
+                # Rendering copyable text areas
                 st.text_area(f"📦 Product Box {index + 1} ({p_name})", value=post_template, height=220)
                 st.divider()
                 
