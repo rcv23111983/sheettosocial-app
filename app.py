@@ -2,17 +2,18 @@ import streamlit as st
 import pandas as pd
 import os
 
-# 1. Page Configuration & Styling
-st.set_page_config(page_title="SheetToSocial | Deeyaro Digital", page_icon="📈", layout="centered")
+# 1. Page Configuration & Styling (Changed icon from 📈 to 🌐)
+st.set_page_config(page_title="SheetToSocial | Deeyaro Digital", page_icon="🌐", layout="centered")
 
 # PRODUCT BRANDING: Displays the SheetToSocial logo at the top center
 product_logo = "sheet_logo.png"
 if os.path.exists(product_logo):
     st.image(product_logo, width=150)
 else:
-    st.markdown("### 📈 **SheetToSocial**")
+    st.markdown("### 🌐 **SheetToSocial**")
 
-st.title("📈 SheetToSocial")
+# REMOVED STOCK CHART EMOJI: Changed title emoji to a clean digital world icon
+st.title("🌐 SheetToSocial")
 st.caption("An exclusive high-leverage utility developed by DEEYARO DIGITAL")
 st.subheader("Transform messy spreadsheets into gorgeous, ready-to-post social media text instantly.")
 
