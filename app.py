@@ -6,32 +6,44 @@ import requests
 # 1. Page Configuration & Styling
 st.set_page_config(page_title="SheetToSocial | Deeyaro Digital", page_icon="🌐", layout="centered")
 
-# LIVE GUMROAD VALIDATION INITIALIZATION
+# INITIALIZATION & SECURE LICENSE CHECKING (Moved to the top for immediate verification)
 is_premium = False
 
-# 2. Premium / Sidebar Management
 st.sidebar.title("🔐 License Validation")
 
-# AGENCY BRANDING: Fixed alignment by creating a centered responsive column block inside the sidebar
+# AGENCY BRANDING: Centered responsive logo inside the sidebar grid cells
 agency_logo = "logo.png"  
 if os.path.exists(agency_logo):
-    # Splits the sidebar width into a 3-column layout grid to lock the logo in the absolute center
-    side_col1, side_col2, side_col3 = st.sidebar.columns([1, 4, 1])
+    side_col1, side_col2, side_col3 = st.sidebar.columns([1, 2, 1])
     with side_col2:
         st.image(agency_logo, use_container_width=True)
 else:
     st.sidebar.markdown("### 🏢 **DEEYARO DIGITAL**")
 
+# Captures license entry from user
 license_key = st.sidebar.text_input("Enter Premium Key", type="password", help="Enter the unique license key sent by Gumroad.")
 
 # Dynamic pull for the Gumroad Product Permalink
 try:
     GUMROAD_PRODUCT_PERMALINK = st.secrets["GUMROAD_PRODUCT_PERMALINK"]
 except KeyError:
-    GUMROAD_PRODUCT_PERMALINK = "sheettosocial" # Replace this string with your exact Gumroad product URL handle
+    GUMROAD_PRODUCT_PERMALINK = "sheettosocial" 
 
-if license_key:
-    with st.sidebar.spinner("Checking..."):
+# CORE VALIDATION ENGINE: Checks master override keys FIRST to prevent background locks
+if license_key == "DEEYARO-ADMIN-99X":
+    is_premium = True
+    st.sidebar.success("🎉 Admin Override Mode Active.")
+elif license_key:
+    try:
+        if license_key == st.secrets["PREMIUM_LICENSE_KEY"]:
+            is_premium = True
+            st.sidebar.success("🎉 Admin Master Key Validated.")
+    except KeyError:
+        pass
+
+# If master keys aren't matched, verify uniquely through live Gumroad endpoints
+if license_key and not is_premium:
+    with st.sidebar.spinner("Checking with servers..."):
         try:
             api_url = "https://gumroad.com"
             payload = {
@@ -48,30 +60,19 @@ if license_key:
                     st.sidebar.error("❌ Key Blocked: Sharing Limit Exceeded.")
                 else:
                     is_premium = True
+                    st.sidebar.success("🎉 Premium Mode Active!")
             else:
                 st.sidebar.error("❌ Invalid Key. Try again.")
         except Exception:
-            try:
-                if license_key == st.secrets["PREMIUM_LICENSE_KEY"]:
-                    is_premium = True
-            except KeyError:
-                if license_key == "DEEYARO-ADMIN-99X":
-                    is_premium = True
-                else:
-                    st.sidebar.error("❌ Verification server timeout.")
+            st.sidebar.error("❌ Verification server connection issue.")
 
-# COMPACT SIDEBAR CTA POSITIONING: Sits cleanly at eye level
+# COMPACT SIDEBAR CTA POSITIONING: Sits cleanly at eye level for non-paying users
 if not is_premium:
     st.sidebar.markdown("### 🚀 Unlock Copy")
     st.sidebar.link_button("👉 Get License Key Here", "https://gumroad.com", use_container_width=True) # Replace URL with your exact custom Gumroad link
+    st.sidebar.info("Free Mode Active: Copying text is restricted.")
 
-# Render validation status indicators
-if is_premium:
-    st.sidebar.success("🎉 Premium Mode Active!")
-else:
-    st.sidebar.info("Free Mode Active.")
-
-# DYNAMIC INJECTION ENGINE: Removes scrollbars and locks clipboard selections natively
+# DYNAMIC INJECTION ENGINE: Removes scrollbars and configures conditional clipboards
 css_style = """
     <style>
     /* 1. Global Sidebar Layout Optimization to remove scrollbars */
@@ -88,7 +89,7 @@ css_style = """
     }
 """
 
-# Appends clipboard-blocking layers if user hasn't successfully input their key
+# Appends clipboard-blocking layers ONLY if user is confirmed on the unpaid tier
 if not is_premium:
     css_style += """
     /* 2. Anti-Copy selection and clipboard lockdown for unpaid tier */
