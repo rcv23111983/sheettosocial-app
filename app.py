@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import os
-import hashlib
 
 # 1. Page Configuration & Styling
 st.set_page_config(page_title="SheetToSocial | Deeyaro Digital", page_icon="🌐", layout="centered")
@@ -51,32 +50,15 @@ verify_clicked = st.sidebar.button("🔐 Verify Key", use_container_width=True)
 
 # CLIENT-SIDE LOCAL VALIDATION ENGINE (Zero Network Calls = Zero Timeouts)
 if verify_clicked and license_key:
-    clean_key = str(license_key).strip()
+    clean_key = str(license_key).strip().upper() # Converts to uppercase to handle accidental typos safely
     
-    # 1. Admin Master Bypass
-    if clean_key == "DEEYARO-ADMIN-99X":
+    # 1. Admin Master Bypass & Standard Production Code Validation
+    if clean_key == "DEEYARO-ADMIN-99X" or (clean_key.startswith("DEEYARO-") and clean_key.endswith("-PREMIUM")):
         st.session_state["premium_unlocked"] = True
-        st.sidebar.success("🎉 Admin Override Mode Active.")
-    
-    # 2. Secure Local Crypto Hash Check
+        st.sidebar.success("🎉 SheetToSocial Premium Active! Copy Mode Unlocked.")
     else:
-        # We check if the key contains your unique brand identifier signature
-        if clean_key.startswith("DEEYARO-") and clean_key.endswith("-PREMIUM"):
-            # Generates mathematical verification verification without any server connections
-            st.session_state["premium_unlocked"] = True
-            st.sidebar.success("🎉 SheetToSocial Premium Active! Copy Mode Unlocked.")
-        else:
-            # Fallback to local secrets matching if configured
-            try:
-                if clean_key == st.secrets["PREMIUM_LICENSE_KEY"]:
-                    st.session_state["premium_unlocked"] = True
-                    st.sidebar.success("🎉 SheetToSocial Premium Active!")
-                else:
-                    st.session_state["premium_unlocked"] = False
-                    st.sidebar.error("❌ Invalid License Key.")
-            except KeyError:
-                st.session_state["premium_unlocked"] = False
-                st.sidebar.error("❌ Invalid License Key. Purchase a valid pass below.")
+        st.session_state["premium_unlocked"] = False
+        st.sidebar.error("❌ Invalid License Key. Purchase a valid pass below.")
 
 # Check the global validation profile state flag
 is_premium = st.session_state["premium_unlocked"]
@@ -87,7 +69,7 @@ if not is_premium:
 # Premium Marketing Feature inside the Sidebar to drive sales
 if not is_premium:
     st.sidebar.markdown("### 🚀 Unlock Copy & Unlimited Rows")
-    st.sidebar.link_button("👉 Get Your License Key Here", "https://deeyarodigital.gumroad.com/l/sheettosocial", use_container_width=True)
+    st.sidebar.link_button("👉 Get Your License Key Here", "https://gumroad.com", use_container_width=True)
     st.sidebar.markdown("Remove text copy protection, unlock full sheet conversions, and grab clean copy-ready outputs.")
 
 # Layout lock shield execution blocks
@@ -103,7 +85,7 @@ if not is_premium:
         }
         textarea {
             user-select: none !important;
-            -webkit-view-select: none !important;
+            -webkit-user-select: none !important;
             pointer-events: none !important;
             background-color: #f5f5f5 !important;
         }
