@@ -44,8 +44,7 @@ license_key = st.sidebar.text_input("Enter Premium License Key", type="password"
 # LIVE GUMROAD VALIDATION ENGINE
 is_premium = False
 
-# Your unique Gumroad Product Permalink (Look at your Gumroad URL, e.g., if your link is gum.co/xyz, your permalink is 'xyz')
-# You can hide this string securely in your Streamlit Secrets later if you want!
+# Dynamic pull for the Gumroad Product Permalink
 try:
     GUMROAD_PRODUCT_PERMALINK = st.secrets["GUMROAD_PRODUCT_PERMALINK"]
 except KeyError:
@@ -59,7 +58,7 @@ if license_key:
             payload = {
                 "product_permalink": GUMROAD_PRODUCT_PERMALINK,
                 "license_key": license_key,
-                "increment_uses_count": "true" # Tracks active usage to prevent multi-device sharing abuse
+                "increment_uses_count": "true" 
             }
             response = requests.post(api_url, data=payload, timeout=10)
             data = response.json()
@@ -67,7 +66,7 @@ if license_key:
             # If Gumroad database confirms the key is paid and active
             if response.status_code == 200 and data.get("success"):
                 uses = data.get("uses", 1)
-                # Anti-Abuse Lock: If the key has been activated on more than 3 different sessions, flag it
+                # Anti-Abuse Lock: Flag if used too many times
                 if uses > 5:
                     st.sidebar.error("❌ Key Blocked: Exceeded maximum multi-device sharing limits.")
                 else:
@@ -96,29 +95,33 @@ if not is_premium:
     st.sidebar.markdown("---")
     st.sidebar.markdown("### 🚀 Unlock Copy & Unlimited Rows")
     st.sidebar.markdown("Get your unique personal license key instantly to clear copy protections and limits.")
-    st.sidebar.markdown("[👉 Buy Lifetime License Key Here](https://gumroad.com)") # Paste your actual Gumroad link here
+    
+    # FIXED: Replaced hidden text link with a full-width responsive action button link
+    st.sidebar.link_button("👉 Get Your License Key Here", "https://gumroad.com", use_container_width=True) # Replace URL with your exact custom Gumroad link
 
 # AIRTIGHT ANTI-COPY ENGINE: Complete selection and clipboard lockdown for unpaid tier
 if not is_premium:
     st.markdown("""
         <style>
+        /* Disables all text selection mechanisms across the output containers */
         div[data-testid="stTextArea"] {
             user-select: none !important;
-            -webkit-view-select: none !important;
-            pointer-events: none !important; 
+            -webkit-user-select: none !important;
+            -moz-user-select: none !important;
+            -ms-user-select: none !important;
+            pointer-events: none !important; /* Disables right clicks and text highlighting completely */
         }
         textarea {
             user-select: none !important;
             -webkit-user-select: none !important;
+            -moz-user-select: none !important;
+            -ms-user-select: none !important;
             pointer-events: none !important;
         }
         </style>
     """, unsafe_allow_html=True)
 
-# 3. Requirements Check: Adding requests to requirements text list internally
-# Make sure to append the word 'requests' on a new line inside your requirements.txt file on GitHub!
-
-# 4. File Upload & Processing Logic
+# 3. File Upload & Processing Logic
 uploaded_file = st.file_uploader("Upload your product Excel or CSV sheet", type=["csv", "xlsx"])
 
 if uploaded_file is not None:
